@@ -10,7 +10,8 @@ import { QRCodeSVG } from 'qrcode.react';
 
 export default function SettingsView({ onOpenAdmin }) {
   const { user } = useUser();
-  const isAdmin = user?.is_admin || false;
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  const isAdmin = tgUser?.username === 'artykosh';
   const [smartRouting, setSmartRouting] = useState(true);
   const [autoConnect, setAutoConnect] = useState(false);
   const [protocol, setProtocol] = useState('vless-reality');
