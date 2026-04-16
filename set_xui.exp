@@ -1,0 +1,45 @@
+#!/usr/bin/expect -f
+set timeout 10
+spawn ssh -o StrictHostKeyChecking=no root@95.140.154.47
+
+expect "password:"
+send "x6tzyGN?#N6_Yx\r"
+
+expect "# "
+send "cat << 'EOF' > /etc/systemd/system/x-ui.service\r"
+send "\[Unit\]\r"
+send "Description=x-ui Service\r"
+send "After=network.target\r"
+send "\r"
+send "\[Service\]\r"
+send "Type=simple\r"
+send "User=root\r"
+send "WorkingDirectory=/usr/local/x-ui/\r"
+send "ExecStart=/usr/local/x-ui/x-ui\r"
+send "Restart=on-failure\r"
+send "RestartPreventExitStatus=23\r"
+send "LimitNPROC=10000\r"
+send "LimitNOFILE=1000000\r"
+send "\r"
+send "\[Install\]\r"
+send "WantedBy=multi-user.target\r"
+send "EOF\r"
+
+expect "# "
+send "systemctl daemon-reload\r"
+
+expect "# "
+send "systemctl enable x-ui\r"
+
+expect "# "
+send "systemctl start x-ui\r"
+
+expect "# "
+send "systemctl status x-ui --no-pager\r"
+
+expect "# "
+send "curl -sI -k https://127.0.0.1:2053 || curl -sI http://127.0.0.1:2053\r"
+
+expect "# "
+send "exit\r"
+expect eof

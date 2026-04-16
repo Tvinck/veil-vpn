@@ -1,0 +1,10 @@
+#!/usr/bin/expect -f
+set timeout 10
+spawn ssh -o StrictHostKeyChecking=no root@95.140.154.47 uname -a
+expect {
+    "password:" {
+        send "x6tzyGN?#N6_Yx\r"
+        exp_continue
+    }
+    eof
+}

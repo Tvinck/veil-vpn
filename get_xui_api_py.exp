@@ -1,0 +1,21 @@
+#!/usr/bin/expect -f
+set timeout 10
+spawn ssh -o StrictHostKeyChecking=no root@95.140.154.47 {
+cat << 'EOF' > /tmp/check.py
+import urllib.request, urllib.parse, json
+
+data = urllib.parse.urlencode({'username': 'admin', 'password': 'veil_admin_pass'}).encode()
+req = urllib.request.Request('http://127.0.0.1:2053/login', data=data)
+res = urllib.request.urlopen(req)
+cookie = res.headers.get('Set-Cookie')
+
+req2 = urllib.request.Request('http://127.0.0.1:2053/panel/api/inbounds/list')
+req2.add_header('Cookie', cookie)
+res2 = urllib.request.urlopen(req2)
+print(res2.read().decode())
+EOF
+python3 /tmp/check.py
+}
+expect "password:"
+send "x6tzyGN?#N6_Yx\r"
+expect eof

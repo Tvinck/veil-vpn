@@ -1,0 +1,14 @@
+#!/usr/bin/expect -f
+set timeout 10
+spawn ssh -o StrictHostKeyChecking=no root@95.140.154.47
+
+expect "password:"
+send "x6tzyGN?#N6_Yx\r"
+
+expect "# "
+send "/usr/local/x-ui/bin/xray-linux-amd64 x25519\r"
+
+expect "Private key:"
+expect "# "
+send "exit\r"
+expect eof

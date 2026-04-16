@@ -1,0 +1,6 @@
+#!/usr/bin/expect -f
+set timeout 10
+spawn ssh -o StrictHostKeyChecking=no root@95.140.154.47 "sqlite3 /etc/x-ui/x-ui.db 'SELECT id, port, stream_settings FROM inbounds WHERE remark = \"vless-reality\";' || sqlite3 /etc/x-ui/x-ui.db 'SELECT id, port, stream_settings FROM inbounds;'"
+expect "password:"
+send "x6tzyGN?#N6_Yx\r"
+expect eof

@@ -1,0 +1,6 @@
+#!/usr/bin/expect -f
+set timeout 10
+spawn ssh -o StrictHostKeyChecking=no root@95.140.154.47 "COOKIE=\$(curl -s -c - -X POST http://127.0.0.1:2053/login -d 'username=admin' -d 'password=veil_admin_pass' | grep -o 'session=.*') && curl -s -b \"\$COOKIE\" http://127.0.0.1:2053/panel/api/inbounds/list | grep -o '{.*}'"
+expect "password:"
+send "x6tzyGN?#N6_Yx\r"
+expect eof

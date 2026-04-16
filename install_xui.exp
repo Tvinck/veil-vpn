@@ -1,0 +1,32 @@
+#!/usr/bin/expect -f
+set timeout 180
+spawn ssh -o StrictHostKeyChecking=no root@95.140.154.47
+
+expect "password:"
+send "x6tzyGN?#N6_Yx\r"
+
+expect "# "
+send "bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)\r"
+
+expect {
+    "Are you sure you want to proceed?" {
+        send "y\r"
+        exp_continue
+    }
+    "Please set up the username" {
+        send "admin\r"
+        exp_continue
+    }
+    "Please set up the password" {
+        send "veil_admin_pass\r"
+        exp_continue
+    }
+    "Please set up the panel port" {
+        send "2053\r"
+        exp_continue
+    }
+    "# " {
+        send "exit\r"
+    }
+}
+expect eof
