@@ -12,103 +12,252 @@
 // DIRECT — обходят прокси (банки блокируют VPN!)
 // ═══════════════════════════════════════════
 export const DIRECT_DOMAINS = [
-  // ── 🏦 Банки (обязательно!) ──
+  // ══════════════════════════════════════════════
+  // 🏦 БАНКИ — блокируют VPN! Обязательно DIRECT
+  // ══════════════════════════════════════════════
+  // Сбер
   'sberbank.ru', 'online.sberbank.ru', 'sber.ru', 'sberbank.com',
+  'sbermarket.ru', 'sber-zvuk.com', 'sberdevices.ru',
+  'sberinsur.ru', 'sberhealth.ru', 'domclick.ru',
+  'sberlogistics.ru', 'sberauto.com', 'okko.tv',
+  // Тинькофф/T-Bank
   'tinkoff.ru', 'tbank.ru', 'tinkoff.com',
+  'tinkoff-bank.ru', 'tinkoff.business',
+  // Альфа
   'alfabank.ru', 'alfa-bank.ru', 'alfabank.com',
-  'vtb.ru', 'online.vtb.ru', 'vtb24.ru',
+  'alfadirect.ru', 'alfa.me',
+  // ВТБ
+  'vtb.ru', 'online.vtb.ru', 'vtb24.ru', 'vtbbo.ru',
+  // Другие банки
   'raiffeisen.ru', 'raiffeisenbank.ru',
-  'gazprombank.ru', 'gpb.ru',
+  'gazprombank.ru', 'gpb.ru', 'gpbm.ru',
   'psb.ru', 'psbank.ru',
   'open.ru', 'openbank.ru',
   'sovcombank.ru', 'halvacard.ru',
   'mkb.ru', 'rosbank.ru', 'unicreditbank.ru',
   'uralsib.ru', 'rshb.ru', 'privetmir.ru',
-  'mir-payment.ru', 'nspk.ru',
+  'homecredit.ru', 'otpbank.ru', 'pochtabank.ru',
+  'citibank.ru', 'tochka.com', 'modulbank.ru',
+  'rocketbank.ru', 'qiwi.com',
+  // Платёжные системы
+  'mir-payment.ru', 'nspk.ru', 'mirconnect.ru',
   'cbr.ru', 'centralbank.ru',
+  'sbp.nspk.ru',                          // СБП (Система Быстрых Платежей)
+  'pay.yandex.ru', 'money.yandex.ru',     // Яндекс Пэй
+  'paymo.ru', 'cloudpayments.ru',
+  'robokassa.ru', 'sberbank.online',
   
-  // ── 🏛️ Госуслуги / Госорганы ──
-  'gosuslugi.ru', 'esia.gosuslugi.ru', 'lk.gosuslugi.ru',
-  'mos.ru', 'uslugi.mosreg.ru',
-  'nalog.gov.ru', 'nalog.ru', 'lkfl2.nalog.ru',
+  // ══════════════════════════════════════════════
+  // 🏛️ ГОСУСЛУГИ — детектят VPN! Полный обход
+  // ══════════════════════════════════════════════
+  // Основной портал
+  'gosuslugi.ru', 'www.gosuslugi.ru',
+  'esia.gosuslugi.ru',                     // Единая система идентификации (ЕСИА)
+  'lk.gosuslugi.ru',                       // Личный кабинет
+  'pos.gosuslugi.ru',                      // Точка оказания услуг
+  'sms.gosuslugi.ru',                      // SMS-уведомления
+  'api.gosuslugi.ru',                      // API
+  'mp.gosuslugi.ru',                       // Мобильный
+  'dom.gosuslugi.ru',                      // ГИС ЖКХ
+  'statement.gosuslugi.ru',                // Выписки
+  'partners.gosuslugi.ru',                 // Партнёры
+  
+  // Региональные порталы
+  'mos.ru', 'my.mos.ru', 'ag.mos.ru',     // Москва
+  'uslugi.mosreg.ru', 'mosreg.ru',        // Московская область
+  'gu.spb.ru', 'spb.ru',                  // Санкт-Петербург
+  'gosuslugi71.ru',                        // Тульская область
+  'pgu.krasnodar.ru',                      // Краснодарский край
+  
+  // ФНС (Налоговая)
+  'nalog.gov.ru', 'nalog.ru',
+  'lkfl2.nalog.ru',                        // ЛК физ. лица
+  'lkul.nalog.ru',                         // ЛК юр. лица
+  'lkip.nalog.ru',                         // ЛК ИП
+  'npd.nalog.ru',                          // Самозанятые (Мой налог)
+  'pb.nalog.ru',                           // Проверка бизнеса
+  'kkt-online.nalog.ru',                   // Онлайн-кассы
+  'fns.gov.ru',
+  
+  // Пенсионный / Социальный фонд
   'pfr.gov.ru', 'sfr.gov.ru', 'es.pfrf.ru',
-  'rosreestr.gov.ru', 'rosreestr.ru',
-  'fns.gov.ru', 'fssprus.ru',
-  'mvd.gov.ru', 'gibdd.ru',
-  'zakupki.gov.ru', 'torgi.gov.ru',
-  'rpn.gov.ru', 'fas.gov.ru',
-  'sudrf.ru', ' kad.arbitr.ru',
-  'fms.gov.ru', 'ufms.gov.ru',
+  'lk.sfr.gov.ru',                        // ЛК Соц. фонда
   
-  // ── 📱 Российские соцсети ──
+  // Росреестр
+  'rosreestr.gov.ru', 'rosreestr.ru',
+  'pkk.rosreestr.ru',                     // Публичная кадастровая карта
+  'portal.rosreestr.ru',
+  
+  // Суды / Правосудие
+  'sudrf.ru', 'kad.arbitr.ru',
+  'arbitr.ru', 'efile.sudrf.ru',
+  'vsrf.ru', 'cdlsrf.ru',
+  
+  // МВД / ГИБДД / Миграция
+  'mvd.gov.ru', 'gibdd.ru',
+  'гувм.мвд.рф',
+  'fms.gov.ru', 'ufms.gov.ru',
+  'fssprus.ru', 'fssp.gov.ru',            // Судебные приставы
+  
+  // Другие госорганы
+  'zakupki.gov.ru', 'torgi.gov.ru',       // Госзакупки
+  'rpn.gov.ru', 'fas.gov.ru',             // Роспотребнадзор, ФАС
+  'customs.gov.ru', 'alta.ru',            // Таможня
+  'minzdrav.gov.ru',                       // Минздрав
+  'edu.gov.ru', 'minobrnauki.gov.ru',     // Образование
+  'mintrud.gov.ru',                        // Минтруд
+  'economy.gov.ru',                        // Минэкономразвития
+  'government.ru', 'kremlin.ru',           // Правительство
+  'duma.gov.ru',                           // Госдума
+  'rkn.gov.ru',                            // Роскомнадзор
+  'mchs.gov.ru',                           // МЧС
+  'mil.ru',                                // Минобороны
+  'genproc.gov.ru',                        // Генпрокуратура
+  'cbr.ru', 'centralbank.ru',             // Центробанк
+  
+  // ══════════════════════════════════════════════
+  // 🏥 ЗДОРОВЬЕ / МЕДИЦИНА — VPN блокируют!
+  // ══════════════════════════════════════════════
+  'emias.info', 'emias.mos.ru',            // ЕМИАС (Москва)
+  'gosuslugi.doctor',                      // Запись к врачу
+  'apteka.ru', 'zdravcity.ru',
+  'eapteka.ru', 'piluli.ru',
+  'gorzdrav.org',                          // Горздрав аптеки
+  'invitro.ru', 'gemotest.ru',            // Лаборатории
+  'helix.ru', 'kdl.ru',
+  'docplus.ru', 'docdoc.ru',              // Онлайн-запись
+  'sberhealth.ru', 'telemed.ru',          // Телемедицина
+  
+  // ══════════════════════════════════════════════
+  // 🛡️ СТРАХОВАНИЕ — детектят VPN
+  // ══════════════════════════════════════════════
+  'ingos.ru', 'rgs.ru', 'alfastrah.ru',
+  'sogaz.ru', 'sberins.ru',
+  'reso.ru', 'vsk.ru',
+  'e-osago.ru', 'osago.ru',               // ОСАГО онлайн
+  
+  // ══════════════════════════════════════════════
+  // 📱 РОССИЙСКИЕ СОЦСЕТИ / СЕРВИСЫ
+  // ══════════════════════════════════════════════
   'vk.com', 'vk.ru', 'vkontakte.ru', 'vk.me', 'vk.cc',
-  'vkusvill.ru', 'vkcdn.me',
+  'vkusvill.ru', 'vkcdn.me', 'userapi.com',
+  'vk-cdn.net', 'vkuser.net',
   'ok.ru', 'odnoklassniki.ru', 'odkl.ru',
   'mail.ru', 'e.mail.ru', 'go.mail.ru', 'my.mail.ru',
+  'list.ru', 'bk.ru', 'inbox.ru',         // Mail.ru почта домены
+  'cloud.mail.ru',                         // Mail.ru облако
   'yandex.ru', 'ya.ru', 'yandex.com', 'yandex.net',
+  'yastatic.net', 'yandex.st',            // Яндекс CDN
   'dzen.ru', 'zen.yandex.ru',
   'kinopoisk.ru', 'hd.kinopoisk.ru',
   'music.yandex.ru', 'disk.yandex.ru',
   'cloud.yandex.ru', 'tracker.yandex.ru',
+  'metrika.yandex.ru', 'mc.yandex.ru',    // Яндекс Метрика
+  'passport.yandex.ru',                    // Яндекс паспорт
+  'id.yandex.ru',                          // Яндекс ID
+  'wordstat.yandex.ru',                    // Вордстат
+  'direct.yandex.ru',                      // Яндекс Директ
+  'webmaster.yandex.ru',                   // Вебмастер
+  'connect.yandex.ru',                     // Яндекс 360
   'rutube.ru',
   
-  // ── 🛒 Маркетплейсы ──
-  'wildberries.ru', 'wb.ru', 'wbx-content.ru',
-  'ozon.ru', 'ozon.st', 'cdn.ozon.ru',
+  // ══════════════════════════════════════════════
+  // 🛒 МАРКЕТПЛЕЙСЫ
+  // ══════════════════════════════════════════════
+  'wildberries.ru', 'wb.ru', 'wbx-content.ru', 'wbstatic.net',
+  'ozon.ru', 'ozon.st', 'cdn.ozon.ru', 'ozon-seller.ru',
   'avito.ru', 'avito.st',
   'lamoda.ru', 'megamarket.ru',
   'sbermegamarket.ru', 'market.yandex.ru',
   'dns-shop.ru', 'mvideo.ru', 'eldorado.ru',
   'citilink.ru', 'regard.ru',
+  'kassir.ru', 'afisha.ru',               // Билеты
+  'obi.ru', 'leroymerlin.ru',             // Строительные
+  '2gis.ru', '2gis.com',                  // 2ГИС карты
   
-  // ── 📡 Телеком / Операторы ──
+  // ══════════════════════════════════════════════
+  // 📡 ТЕЛЕКОМ / ОПЕРАТОРЫ
+  // ══════════════════════════════════════════════
   'mts.ru', 'megafon.ru', 'beeline.ru',
   'tele2.ru', 't2.ru',
   'rt.ru', 'rostelecom.ru', 'lk.rt.ru',
-  'yota.ru', 'motiv.ru', 'tele2.com',
+  'yota.ru', 'motiv.ru',
+  'dom.ru',                                // Дом.ру
+  'ttk.ru',                                // ТТК
+  'er-telecom.ru',                         // ЭР-Телеком
   
-  // ── 🚕 Доставка / Такси / Еда ──
+  // ══════════════════════════════════════════════
+  // 🚕 ДОСТАВКА / ТАКСИ / ЕДА
+  // ══════════════════════════════════════════════
   'taxi.yandex.ru', 'go.yandex.ru',
   'eda.yandex.ru', 'eats.yandex.ru',
+  'lavka.yandex.ru',                       // Яндекс Лавка
   'delivery-club.ru',
   'cdek.ru', 'pochta.ru', 'boxberry.ru',
   'dpd.ru', 'pecom.ru', 'dellin.ru',
+  'samokat.ru',                            // Самокат
+  'sbermarket.ru',                         // СберМаркет
+  'vprok.ru',                              // Впрок (Перекрёсток)
   
-  // ── 🎬 Российский контент ──
+  // ══════════════════════════════════════════════
+  // 🎬 РОССИЙСКИЙ КОНТЕНТ / СТРИМИНГ
+  // ══════════════════════════════════════════════
   'ivi.ru', 'okko.tv', 'premier.one',
   'more.tv', 'wink.ru', 'start.ru',
   'kion.ru', 'smotrim.ru',
+  'amediateka.ru',                         // Амедиатека
+  'megogo.ru',                             // Megogo
   
-  // ── 📲 Telegram DC Infrastructure (ПОЛНЫЙ bypass) ──
-  // Критично: если у юзера включён Telegram Proxy + VPN = конфликт
-  // Решение: весь Telegram-трафик идёт напрямую
+  // ══════════════════════════════════════════════
+  // 📲 TELEGRAM DC (ПОЛНЫЙ bypass)
+  // ══════════════════════════════════════════════
   'telegram.org', 'web.telegram.org', 't.me',
   'core.telegram.org', 'telegram.me',
-  'api.telegram.org',                    // Bot API
-  'updates.telegram.org',                // Обновления клиента
-  'desktop.telegram.org',                // Desktop клиент  
-  'macos.telegram.org',                  // macOS клиент
-  'td.telegram.org',                     // TDLib
+  'api.telegram.org',
+  'updates.telegram.org',
+  'desktop.telegram.org', 'macos.telegram.org',
+  'td.telegram.org',
   'cdn1.telegram.org', 'cdn2.telegram.org', 'cdn3.telegram.org',
   'cdn4.telegram.org', 'cdn5.telegram.org',
-  'contest.com',                         // Telegram contest
-  'fragment.com',                        // Fragment (TON/usernames)
-  'tonapi.io',                           // TON API  
-  'toncenter.com',                       // TON Center
+  'contest.com', 'fragment.com',
+  'tonapi.io', 'toncenter.com',
   
-  // ── 📞 WhatsApp / Viber ──
+  // ══════════════════════════════════════════════
+  // 📞 МЕССЕНДЖЕРЫ (работающие в РФ)
+  // ══════════════════════════════════════════════
   'web.whatsapp.com', 'whatsapp.com', 'whatsapp.net',
-  'viber.com',
+  'viber.com', 'viber.media',
   
-  // ── 🏫 Образование / Работа ──
+  // ══════════════════════════════════════════════
+  // 🏫 ОБРАЗОВАНИЕ / РАБОТА
+  // ══════════════════════════════════════════════
   'hh.ru', 'headhunter.ru',
-  'superjob.ru', 'rabota.ru',
+  'superjob.ru', 'rabota.ru', 'trudvsem.ru',
   'stepik.org', 'skillbox.ru',
   'geekbrains.ru', 'practicum.yandex.ru',
+  'netology.ru', 'foxford.ru',
+  'skyeng.ru', 'skysmart.ru',
+  'uchi.ru',                               // Учи.ру
+  '1c.ru', '1c-bitrix.ru',               // 1С
+  'school.mosreg.ru', 'dnevnik.ru',       // Электронные дневники
+  'sberclass.ru',                          // СберКласс
   
-  // ── 💊 Здоровье ──
-  'emias.info', 'gosuslugi.doctor',
+  // ══════════════════════════════════════════════
+  // 💊 АПТЕКИ / ЛАБОРАТОРИИ
+  // ══════════════════════════════════════════════
   'apteka.ru', 'zdravcity.ru',
+  'eapteka.ru', 'gorzdrav.org',
+  'invitro.ru', 'gemotest.ru',
+  'helix.ru', 'kdl.ru',
+  
+  // ══════════════════════════════════════════════
+  // 🏠 ЖКХ / НЕДВИЖИМОСТЬ
+  // ══════════════════════════════════════════════
+  'domclick.ru',                           // ДомКлик (Сбер)
+  'cian.ru',                               // ЦИАН
+  'domofond.ru', 'yandex.ru/realty',
+  'reformagkh.ru',                         // Реформа ЖКХ
+  'gis-zkh.ru',                            // ГИС ЖКХ
 ];
 
 // ═══════════════════════════════════════════
@@ -168,10 +317,33 @@ export const PROXY_DOMAINS = [
   'figma.com',
   'notion.so', 'notion.site',
   
-  // ── 🔍 Google (замедление/блокировка) ──
-  'google.com', 'www.google.com', 'google.ru',
-  'youtube.com', 'www.youtube.com', 'youtu.be',
-  'ytimg.com', 'ggpht.com', 'googlevideo.com',
+  // ── 🔍 Google / YouTube (замедление мобильными операторами) ──
+  // Критично: МТС, Мегафон, Билайн замедляют через DPI по SNI/IP
+  // Все Google CDN-домены ОБЯЗАТЕЛЬНО через VPN-туннель
+  'google.com', 'www.google.com', 'google.ru', 'google.de',
+  'googleapis.com', 'www.googleapis.com',   // Google API (загрузка данных)
+  'gstatic.com', 'www.gstatic.com',         // Google Static CDN
+  'googleusercontent.com',                    // Google User Content
+  'googlesyndication.com',                    // Google Ads (может блокироваться)
+  'googleadservices.com',                     // Google Ad Services
+  'google-analytics.com',                     // Analytics
+
+  // ── 📺 YouTube (ПОЛНЫЙ CDN bypass) ──
+  'youtube.com', 'www.youtube.com', 'youtu.be', 'm.youtube.com',
+  'music.youtube.com',                        // YouTube Music
+  'studio.youtube.com',                       // YouTube Studio
+  'tv.youtube.com',                           // YouTube TV
+  'ytimg.com', 'i.ytimg.com', 's.ytimg.com', // Превью/обложки видео
+  'ggpht.com',                                // Google Photo Hosting
+  'googlevideo.com',                          // YouTube CDN основной
+  'youtube-nocookie.com',                     // YouTube Embed без кук
+  'youtubekids.com',                          // YouTube Kids
+  'youtube-ui.l.google.com',                  // YouTube UI CDN
+  'wide-youtube.l.google.com',               // YouTube Wide CDN
+  // YouTube video CDN серверы (sn-*.googlevideo.com через wildcard)
+  // Hiddify поддерживает wildcard: *.googlevideo.com
+  
+  // ── 📧 Google сервисы ──
   'gmail.com', 'mail.google.com',
   'drive.google.com', 'docs.google.com',
   'sheets.google.com', 'slides.google.com',
@@ -179,6 +351,9 @@ export const PROXY_DOMAINS = [
   'translate.google.com', 'play.google.com',
   'maps.google.com', 'photos.google.com',
   'accounts.google.com', 'myaccount.google.com',
+  'fonts.googleapis.com', 'fonts.gstatic.com',  // Google Fonts
+  'lh3.googleusercontent.com',                  // Google Photos CDN
+  'storage.googleapis.com',                      // Google Cloud Storage
   
   // ── 🍎 Apple (iCloud, App Store) ──
   'apple.com', 'icloud.com', 'appleid.apple.com',
