@@ -26,63 +26,55 @@ async function checkAndRestartXUI(serverConfig) {
     const { name, host, xui_port, xui_user, xui_pass } = serverConfig;
     const xuiUrl = `http://${host}:${xui_port}`;
     
-    // Step 1: Check if x-ui is reachable
+    // Step 1: Check if x-ui is reachable and login
     try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 8000);
         
-        const response = await fetch(`${xuiUrl}/login`, {
+        const loginResp = await fetch(`${xuiUrl}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `username=${encodeURIComponent(xui_user)}&password=${encodeURIComponent(xui_pass)}`,
             signal: controller.signal
         });
         
         clearTimeout(timeout);
         
-        if (response.ok) {
-            // x-ui is running, now check xray status
-            try {
-                const loginResp = await fetch(`${xuiUrl}/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `username=${encodeURIComponent(xui_user)}&password=${encodeURIComponent(xui_pass)}`
-                });
-                
-                const cookies = loginResp.headers.get('set-cookie') || '';
-                
-                if (cookies) {
-                    const statusResp = await fetch(`${xuiUrl}/server/status`, {
-                        headers: { 'Cookie': cookies }
-                    });
-                    
-                    if (statusResp.ok) {
-                        const data = await statusResp.json();
-                        if (data.success && data.obj) {
-                            const xrayVersion = data.obj.xray?.version;
-                            if (!xrayVersion) {
-                                // xray core is not running — restart
-                                console.log(`⚠️ [${name}] xray core not running, attempting restart...`);
-                                
-                                const restartResp = await fetch(`${xuiUrl}/server/restartXrayService`, {
-                                    method: 'POST',
-                                    headers: { 'Cookie': cookies }
-                                });
-                                
-                                if (restartResp.ok) {
-                                    await sendTelegramAlert(`🔄 <b>Watchdog:</b> xray на <b>${name}</b> был перезапущен автоматически.`);
-                                    return { status: 'restarted', server: name };
-                                } else {
-                                    await sendTelegramAlert(`🚨 <b>Watchdog:</b> Не удалось перезапустить xray на <b>${name}</b>!`);
-                                    return { status: 'restart_failed', server: name };
-                                }
-                            }
-                            return { status: 'healthy', server: name, xray: xrayVersion };
+        const cookies = loginResp.headers.get('set-cookie') || '';
+        
+        if (cookies) {
+            const statusResp = await fetch(`${xuiUrl}/server/status`, {
+                headers: { 'Cookie': cookies }
+            });
+            
+            if (statusResp.ok) {
+                const data = await statusResp.json();
+                if (data.success && data.obj) {
+                    const xrayVersion = data.obj.xray?.version;
+                    if (!xrayVersion) {
+                        // xray core is not running — restart
+                        console.log(`⚠️ [${name}] xray core not running, attempting restart...`);
+                        
+                        const restartResp = await fetch(`${xuiUrl}/server/restartXrayService`, {
+                            method: 'POST',
+                            headers: { 'Cookie': cookies }
+                        });
+                        
+                        if (restartResp.ok) {
+                            await sendTelegramAlert(`🔄 <b>Watchdog:</b> xray на <b>${name}</b> был перезапущен автоматически.`);
+                            return { status: 'restarted', server: name };
+                        } else {
+                            await sendTelegramAlert(`🚨 <b>Watchdog:</b> Не удалось перезапустить xray на <b>${name}</b>!`);
+                            return { status: 'restart_failed', server: name };
                         }
                     }
+                    return { status: 'healthy', server: name, xray: xrayVersion };
                 }
-            } catch (apiErr) {
-                console.error(`[${name}] API check error:`, apiErr.message);
             }
-            
             return { status: 'panel_ok_api_fail', server: name };
+        } else {
+            console.error(`[${name}] Login failed, no cookies returned.`);
+            return { status: 'login_failed', server: name };
         }
     } catch (err) {
         // x-ui panel is completely unreachable
@@ -90,8 +82,6 @@ async function checkAndRestartXUI(serverConfig) {
         await sendTelegramAlert(`🚨 <b>Watchdog ALERT:</b> x-ui на <b>${name}</b> (${host}) не отвечает! Требуется ручное вмешательство.`);
         return { status: 'unreachable', server: name, error: err.message };
     }
-    
-    return { status: 'unknown', server: name };
 }
 
 export default async function handler(req, res) {
