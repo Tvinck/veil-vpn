@@ -14,6 +14,30 @@ export default function AdminView({ onBack }) {
   const [transactions, setTransactions] = useState([]);
   const [stats, setStats] = useState({ totalUsers: 0, activePremium: 0, revenue: '0 ⭐', new24h: '+0', onlineNow: 0 });
   const [loading, setLoading] = useState(true);
+  const [serverMetrics, setServerMetrics] = useState({});
+  const [metricsLoading, setMetricsLoading] = useState(false);
+
+  const fetchMetrics = async () => {
+    setMetricsLoading(true);
+    try {
+      const initData = window.Telegram?.WebApp?.initData || '';
+      const resp = await fetch('/api/server-metrics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData })
+      });
+      const data = await resp.json();
+      if (data.metrics) {
+        const metricsMap = {};
+        data.metrics.forEach(m => { metricsMap[m.serverId] = m; });
+        setServerMetrics(metricsMap);
+      }
+    } catch (e) {
+      console.error('Metrics fetch failed:', e);
+    } finally {
+      setMetricsLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -63,6 +87,13 @@ export default function AdminView({ onBack }) {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Fetch metrics when system tab is opened
+  useEffect(() => {
+    if (activeTab === 'system') {
+      fetchMetrics();
+    }
+  }, [activeTab]);
   
   const handleAction = async (action, userId, label) => {
     window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('medium');
@@ -96,6 +127,27 @@ export default function AdminView({ onBack }) {
           setUsers(users.map(u => u.id === userId ? { ...u, is_banned: false } : u));
         } else if (action === 'add_sub') {
           setUsers(users.map(u => u.id === userId ? { ...u, subscription_expires_at: result.newExpiry } : u));
+        }
+      } else if (action === 'restart_xray' || action === 'reboot_sys') {
+        // Server management via watchdog API
+        const resp = await fetch('/api/watchdog', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData })
+        });
+        const result = await resp.json();
+        if (resp.ok) {
+          const serverResult = result.results?.[0];
+          if (serverResult) {
+            alert(`✅ ${serverResult.server}: ${serverResult.status}${serverResult.xray ? ` (xray ${serverResult.xray})` : ''}`);
+          } else {
+            alert('✅ Watchdog выполнен');
+          }
+          // Refresh metrics after restart
+          fetchMetrics();
+          fetchData();
+        } else {
+          alert(`Ошибка: ${result.error || 'Неизвестная ошибка'}`);
         }
       } else {
         alert(`Действие выполнено: ${label}`);
@@ -278,9 +330,23 @@ export default function AdminView({ onBack }) {
 
             {activeTab === 'system' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {metricsLoading && (
+                  <div style={{ textAlign: 'center', padding: '12px', color: 'var(--text-muted)', fontSize: 13 }}>
+                    <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite', marginRight: 6 }} />
+                    Загрузка метрик серверов...
+                  </div>
+                )}
                 {servers.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>Нет добавленных серверов</div>
-                ) : servers.map((s) => (
+                ) : servers.map((s) => {
+                  const m = serverMetrics[s.id]; // Real metrics for this server
+                  const cpuVal = m?.cpu ?? null;
+                  const ramVal = m?.ram ?? null;
+                  const diskVal = m?.disk ?? null;
+                  const uptimeStr = m?.uptime || null;
+                  const xuiStatus = m?.xui_status || null;
+                  
+                  return (
                   <div key={s.id} className="card" style={{ padding: 16 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -290,15 +356,29 @@ export default function AdminView({ onBack }) {
                           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{s.host}:{s.port}</div>
                         </div>
                       </div>
-                      <div style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: 8, fontSize: 12, fontWeight: 600 }}>
-                        {s.current_users || 0} / {s.max_users || 1000} юзеров
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: 8, fontSize: 12, fontWeight: 600 }}>
+                          {s.current_users || 0} / {s.max_users || 1000} юзеров
+                        </div>
+                        {xuiStatus && (
+                          <div style={{ fontSize: 10, marginTop: 4, color: xuiStatus === 'running' ? 'var(--green)' : 'var(--error)' }}>
+                            xray: {xuiStatus === 'running' ? '● работает' : '● ' + xuiStatus}
+                          </div>
+                        )}
                       </div>
                     </div>
                     
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-                      <LoadBar label="Нагрузка CPU (Ядра)" value={Math.floor(Math.random()*40)+10} color={'var(--accent-light)'} />
-                      <LoadBar label="Оперативная память (RAM)" value={Math.floor(Math.random()*20)+20} color={'var(--green)'} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+                      <LoadBar label="CPU" value={cpuVal !== null ? cpuVal : '—'} color={cpuVal > 80 ? 'var(--error)' : 'var(--accent-light)'} />
+                      <LoadBar label="RAM" value={ramVal !== null ? ramVal : '—'} color={ramVal > 80 ? 'var(--error)' : 'var(--green)'} />
+                      {diskVal !== null && <LoadBar label="Диск" value={diskVal} color={diskVal > 85 ? 'var(--error)' : 'var(--orange)'} />}
                     </div>
+
+                    {uptimeStr && (
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Activity size={14} /> Uptime: <strong style={{ color: 'var(--text-primary)' }}>{uptimeStr}</strong>
+                      </div>
+                    )}
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                       <button onClick={() => handleAction('restart_xray', s.id, `Перезапуск ядра`)} className="btn btn-ghost" style={{ height: 40, fontSize: 13, gap: 6, border: '1px solid var(--border)' }}>
@@ -309,7 +389,8 @@ export default function AdminView({ onBack }) {
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </motion.div>
@@ -380,14 +461,18 @@ function TransactionRow({ user, amount, type, status, time, isLast }) {
 }
 
 function LoadBar({ label, value, color, customText }) {
+  const isNumeric = typeof value === 'number' && !isNaN(value);
+  const displayText = customText || (isNumeric ? `${value}%` : String(value));
+  const barWidth = isNumeric ? Math.min(value, 100) : 0;
+  
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
         <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
-        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{customText || `${value}%`}</span>
+        <span style={{ fontWeight: 600, color: isNumeric ? 'var(--text-primary)' : 'var(--text-muted)' }}>{displayText}</span>
       </div>
       <div style={{ height: 6, background: 'rgba(0,0,0,0.3)', borderRadius: 3, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ width: `${value}%`, height: '100%', background: color, borderRadius: 3, transition: 'width 0.5s ease-out', boxShadow: `0 0 10px ${color}` }} />
+        <div style={{ width: `${barWidth}%`, height: '100%', background: color, borderRadius: 3, transition: 'width 0.8s ease-out', boxShadow: barWidth > 0 ? `0 0 10px ${color}` : 'none' }} />
       </div>
     </div>
   );

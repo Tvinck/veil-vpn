@@ -26,6 +26,40 @@ bot.start(async (ctx) => {
         if (startPayload && startPayload.startsWith('VEIL-')) {
             webAppUrl = `${WEBAPP_URL}?ref=${startPayload}`;
             console.log(`📎 Referral deep link: ${startPayload} from user ${ctx.from.id}`);
+            
+            // Create pending referral in DB
+            try {
+                // Find the referrer by referral_code
+                const { data: referrer } = await supabase
+                    .from('veil_users')
+                    .select('id, telegram_id')
+                    .eq('referral_code', startPayload)
+                    .single();
+                
+                if (referrer && String(referrer.telegram_id) !== String(ctx.from.id)) {
+                    // Check if this user already has a referral (prevent duplicates)
+                    const { data: existing } = await supabase
+                        .from('veil_referrals')
+                        .select('id')
+                        .eq('referred_telegram_id', ctx.from.id)
+                        .in('status', ['pending', 'completed'])
+                        .limit(1);
+                    
+                    if (!existing || existing.length === 0) {
+                        await supabase.from('veil_referrals').insert({
+                            referrer_id: referrer.id,
+                            referrer_telegram_id: referrer.telegram_id,
+                            referred_telegram_id: ctx.from.id,
+                            status: 'pending'
+                        });
+                        console.log(`✅ Pending referral created: ${ctx.from.id} → referrer ${referrer.telegram_id}`);
+                    }
+                } else if (referrer && String(referrer.telegram_id) === String(ctx.from.id)) {
+                    console.log(`🚫 Self-referral blocked for ${ctx.from.id}`);
+                }
+            } catch (refErr) {
+                console.error('Referral creation error:', refErr.message);
+            }
         }
 
         await ctx.setChatMenuButton({
