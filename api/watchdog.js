@@ -5,17 +5,6 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || ''; // Your Telegram user ID for alerts
 
-// Server configurations
-const SERVER_CONFIGS = {
-    'b16d92f5-8e80-4d23-b7a4-8a6b5f8cfb9f': {
-        name: 'Германия (Anti-block)',
-        host: process.env.GERMANY_HOST || '95.140.154.47',
-        xui_port: process.env.GERMANY_XUI_PORT || '2053',
-        xui_user: process.env.XUI_USER || 'admin',
-        xui_pass: process.env.XUI_PASS || ''
-    }
-};
-
 async function sendTelegramAlert(message) {
     if (!BOT_TOKEN || !ADMIN_CHAT_ID) return;
     try {
@@ -131,29 +120,57 @@ export default async function handler(req, res) {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const results = [];
 
-    for (const [serverId, config] of Object.entries(SERVER_CONFIGS)) {
-        if (!config.xui_pass) {
-            results.push({ status: 'skipped', server: config.name, reason: 'No credentials' });
-            continue;
-        }
-        
-        const result = await checkAndRestartXUI(config);
-        results.push(result);
+    try {
+        // Fetch ALL servers from DB except coming soon
+        const { data: servers } = await supabase
+            .from('veil_servers')
+            .select('id, name, host, status')
+            .neq('status', 'coming_soon');
 
-        // Update server status in DB based on watchdog result
-        if (result.status === 'unreachable') {
-            await supabase.from('veil_servers')
-                .update({ status: 'maintenance' })
-                .eq('id', serverId);
-        } else if (result.status === 'healthy' || result.status === 'restarted') {
-            await supabase.from('veil_servers')
-                .update({ status: 'online' })
-                .eq('id', serverId);
+        if (!servers || servers.length === 0) {
+            return res.status(200).json({ timestamp: new Date().toISOString(), results: [], note: 'No active servers' });
         }
+
+        for (const server of servers) {
+            // Get credentials dynamically based on country/ID, fallback to defaults
+            const xui_port = process.env[`${server.country_code}_XUI_PORT`] || process.env.XUI_PORT || '2053';
+            const xui_user = process.env[`${server.country_code}_XUI_USER`] || process.env.XUI_USER || 'admin';
+            const xui_pass = process.env[`${server.country_code}_XUI_PASS`] || process.env.XUI_PASS || '';
+
+            if (!xui_pass) {
+                results.push({ status: 'skipped', server: server.name, reason: 'No credentials' });
+                continue;
+            }
+            
+            const result = await checkAndRestartXUI({
+                name: server.name,
+                host: server.host,
+                xui_port,
+                xui_user,
+                xui_pass
+            });
+            
+            results.push(result);
+
+            // Update server status in DB based on watchdog result
+            if (result.status === 'unreachable') {
+                if (server.status !== 'maintenance') {
+                    await supabase.from('veil_servers').update({ status: 'maintenance' }).eq('id', server.id);
+                }
+            } else if (result.status === 'healthy' || result.status === 'restarted') {
+                if (server.status !== 'online') {
+                    await supabase.from('veil_servers').update({ status: 'online' }).eq('id', server.id);
+                }
+            }
+        }
+
+        return res.status(200).json({ 
+            timestamp: new Date().toISOString(),
+            results 
+        });
+    } catch (dbErr) {
+        console.error('Watchdog DB error:', dbErr);
+        return res.status(500).json({ error: 'Failed to fetch servers' });
     }
-
-    return res.status(200).json({ 
-        timestamp: new Date().toISOString(),
-        results 
-    });
 }
+

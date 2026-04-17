@@ -3,22 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Map server IDs to their SSH credentials from env
-function getServerCreds(serverId) {
-    // Format: SERVER_{id_prefix}_HOST, SERVER_{id_prefix}_PASS
-    // For now, hardcode known servers, extensible via env vars
-    const servers = {
-        'b16d92f5-8e80-4d23-b7a4-8a6b5f8cfb9f': {
-            host: process.env.GERMANY_HOST || '95.140.154.47',
-            port: process.env.GERMANY_SSH_PORT || '22',
-            user: 'root',
-            pass: process.env.GERMANY_SSH_PASS || '',
-            xui_port: process.env.GERMANY_XUI_PORT || '2053'
-        }
-    };
-    return servers[serverId] || null;
-}
-
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -44,7 +28,7 @@ export default async function handler(req, res) {
         // Fetch all online servers
         const { data: servers } = await supabase
             .from('veil_servers')
-            .select('id, name, host, port, status')
+            .select('id, name, host, port, status, country_code')
             .eq('status', 'online');
 
         if (!servers || servers.length === 0) {
@@ -54,10 +38,13 @@ export default async function handler(req, res) {
         const metrics = [];
 
         for (const server of servers) {
-            const creds = getServerCreds(server.id);
-            
-            if (!creds || !creds.pass) {
-                // No SSH credentials — return estimated metrics from DB
+            // Get credentials dynamically based on country, fallback to defaults
+            const xui_port = process.env[`${server.country_code}_XUI_PORT`] || process.env.XUI_PORT || '2053';
+            const xui_user = process.env[`${server.country_code}_XUI_USER`] || process.env.XUI_USER || 'admin';
+            const xui_pass = process.env[`${server.country_code}_XUI_PASS`] || process.env.XUI_PASS || '';
+
+            if (!xui_pass) {
+                // No XUI credentials — return estimated metrics from DB
                 metrics.push({
                     serverId: server.id,
                     serverName: server.name,
@@ -66,14 +53,14 @@ export default async function handler(req, res) {
                     disk: null,
                     uptime: null,
                     xui_status: null,
-                    error: 'No SSH credentials configured'
+                    error: 'No XUI credentials configured'
                 });
                 continue;
             }
 
             try {
-                // Use x-ui API to check status (faster than SSH)
-                const xuiUrl = `http://${creds.host}:${creds.xui_port}`;
+                // Use x-ui API to check status
+                const xuiUrl = `http://${server.host}:${xui_port}`;
                 
                 // Try to reach x-ui login page (quick connectivity check)
                 const controller = new AbortController();
@@ -97,7 +84,7 @@ export default async function handler(req, res) {
                         const loginResp = await fetch(`${xuiUrl}/login`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            body: `username=${encodeURIComponent(process.env.XUI_USER || 'admin')}&password=${encodeURIComponent(process.env.XUI_PASS || '')}`,
+                            body: `username=${encodeURIComponent(xui_user)}&password=${encodeURIComponent(xui_pass)}`,
                         });
                         
                         const cookies = loginResp.headers.get('set-cookie') || '';
