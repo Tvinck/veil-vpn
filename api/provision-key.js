@@ -39,7 +39,20 @@ export default async function handler(req, res) {
             }
         }
 
-        // 2. Fetch user to verify subscription status and enforce limits
+        // 2. Check server status — only allow provisioning for online servers
+        const { data: server } = await supabase.from('veil_servers')
+            .select('status, name')
+            .eq('id', server_id).single();
+        
+        if (!server || server.status !== 'online') {
+            return res.status(400).json({ 
+                success: false, 
+                error: `Сервер "${server?.name || 'Unknown'}" пока недоступен. Выберите активный сервер.`,
+                server_unavailable: true
+            });
+        }
+
+        // 3. Fetch user to verify subscription status and enforce limits
         const { data: user } = await supabase.from('veil_users')
             .select('telegram_id, subscription_tier, subscription_expires_at')
             .eq('id', user_id).single();

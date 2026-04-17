@@ -150,7 +150,7 @@ export default function SubscriptionView() {
               <button
                 className="btn btn-primary"
                 disabled={isProcessing || !user}
-                style={{ width: '100%', height: 52, fontSize: 16, background: '#FFE600', color: '#000', border: 'none', fontWeight: 700, opacity: isProcessing ? 0.7 : 1 }}
+                style={{ width: '100%', height: 52, fontSize: 16, background: 'linear-gradient(135deg, #FFE600 0%, #FFB800 100%)', color: '#000', border: 'none', fontWeight: 700, opacity: isProcessing ? 0.7 : 1, borderRadius: 16, boxShadow: '0 4px 20px rgba(255,230,0,0.3)' }}
                 onClick={async () => {
                   if (isProcessing) return;
                   setIsProcessing(true);
@@ -163,33 +163,37 @@ export default function SubscriptionView() {
                          headers: { 'Content-Type': 'application/json' },
                          body: JSON.stringify({
                              tgUserId: user.telegram_id,
-                             planName: plan.title,
+                             planName: plan.nameRu || plan.title,
                              planDuration: plan.days,
-                             priceRub: plan.priceRub // Actually amounts to stars if XTR is default
+                             priceRub: plan.priceStars
                          })
                      });
                      
                      const data = await response.json();
-                     if (!data.invoiceUrl) throw new Error(data.error || 'Failed to generate invoice');
+                     if (!response.ok || !data.invoiceUrl) throw new Error(data.error || 'Failed to generate invoice');
                      
                      if (window.Telegram?.WebApp?.openInvoice) {
                          window.Telegram.WebApp.openInvoice(data.invoiceUrl, async (status) => {
                              if (status === 'paid') {
-                                 // After successful payment, resync user with backend
                                  window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success');
                                  
-                                 const res = await fetch('/api/sync-user', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        tgUser: window.Telegram.WebApp.initDataUnsafe?.user || user,
-                                        initData: window.Telegram.WebApp.initData || ''
-                                    })
-                                 });
-                                 const syncedUser = await res.json();
-                                 if (syncedUser?.user) setUser(syncedUser.user);
+                                 // Re-sync user to get updated subscription from DB
+                                 try {
+                                   const res = await fetch('/api/sync-user', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                          tgUser: window.Telegram.WebApp.initDataUnsafe?.user || user,
+                                          initData: window.Telegram.WebApp.initData || ''
+                                      })
+                                   });
+                                   const syncedUser = await res.json();
+                                   if (syncedUser?.user) setUser(syncedUser.user);
+                                 } catch (syncErr) {
+                                   console.error('Sync after payment failed:', syncErr);
+                                 }
                                  
-                                 window.Telegram?.WebApp?.showAlert?.(`Подписка успешно продлена!`);
+                                 window.Telegram?.WebApp?.showAlert?.(`Подписка успешно оформлена! 🎉`);
                                  setSelectedPlan(null);
                              } else if (status === 'failed') {
                                  window.Telegram?.WebApp?.showAlert?.('Оплата не удалась');
@@ -197,75 +201,17 @@ export default function SubscriptionView() {
                              setIsProcessing(false);
                          });
                      } else {
-                         // Fallback logic for web browsers
-                         window.location.href = data.invoiceUrl;
+                         window.open(data.invoiceUrl, '_blank');
                          setIsProcessing(false);
                      }
                   } catch (e) {
+                      console.error('Payment error:', e);
                       window.Telegram?.WebApp?.showAlert?.('Ошибка: ' + e.message);
                       setIsProcessing(false);
                   }
                 }}
               >
-                {isProcessing ? 'Формирование инвойса...' : `Оплатить ${PLANS[selectedPlan]?.priceRub} ⭐️`}
-              </button>
-
-              <button
-                className="btn btn-ghost"
-                disabled={isProcessing || !user}
-                style={{ width: '100%', height: 52, fontSize: 16, background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-primary)', border: '1px solid var(--border)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: isProcessing ? 0.7 : 1 }}
-                onClick={async () => {
-                   if (isProcessing) return;
-                   setIsProcessing(true);
-                   window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('medium');
-                   
-                   try {
-                     const response = await fetch('/api/create-invoice', {
-                       method: 'POST',
-                       headers: { 'Content-Type': 'application/json' },
-                       body: JSON.stringify({
-                         userId: user.telegram_id,
-                         title: `VEIL VPN ${PLANS[selectedPlan].nameRu}`,
-                         description: `Премиум доступ на ${PLANS[selectedPlan].days} дней`,
-                         amount: PLANS[selectedPlan].priceStars,
-                         planDuration: PLANS[selectedPlan].days
-                       })
-                     });
-                     
-                     if (!response.ok) throw new Error('Network response was not ok');
-                     const data = await response.json();
-                     
-                     if (data.invoiceUrl && window.Telegram?.WebApp?.openInvoice) {
-                       window.Telegram.WebApp.openInvoice(data.invoiceUrl, async (status) => {
-                         if (status === 'paid') {
-                           // The Telegram bot backend processes 'successful_payment' and updates DB,
-                           // but we will proactively update the UI here and fetch latest DB state or just mock-add.
-                           const daysAdd = PLANS[selectedPlan].days;
-                           const newExpiry = new Date(Math.max(Date.now(), expiresAt));
-                           newExpiry.setDate(newExpiry.getDate() + daysAdd);
-                           
-                           setUser({ ...user, subscription_expires_at: newExpiry.toISOString(), is_premium: true });
-                           window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success');
-                           window.Telegram?.WebApp?.showAlert?.(`Звезды успешно списаны! Платёж обрабатывается, подписка активна.`);
-                           setSelectedPlan(null);
-                         } else {
-                           window.Telegram?.WebApp?.showAlert?.('Оплата отменена или не удалась.');
-                         }
-                         setIsProcessing(false);
-                       });
-                     } else {
-                        // Fallback or testing locally outside of TG
-                        window.Telegram?.WebApp?.showAlert?.('Ошибка получения инвойса или приложение открыто вне Telegram.');
-                        setIsProcessing(false);
-                     }
-                   } catch (err) {
-                     console.error(err);
-                     window.Telegram?.WebApp?.showAlert?.('Ошибка сети при создании инвойса.');
-                     setIsProcessing(false);
-                   }
-                }}
-              >
-                {isProcessing ? 'Обработка...' : `Оплатить Stars (${PLANS[selectedPlan]?.priceStars} ⭐)`}
+                {isProcessing ? 'Формирование инвойса...' : `⭐ Оплатить ${PLANS[selectedPlan]?.priceStars} Stars`}
               </button>
             </div>
           </motion.div>

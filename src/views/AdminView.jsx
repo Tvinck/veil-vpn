@@ -67,28 +67,41 @@ export default function AdminView({ onBack }) {
   const handleAction = async (action, userId, label) => {
     window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('medium');
     
-    // Optimistic / Real updates
+    const initData = window.Telegram?.WebApp?.initData || '';
+    
     try {
-      if (action === 'ban') {
-        await supabase.from('veil_users').update({ is_banned: true }).eq('id', userId);
-        setUsers(users.map(u => u.id === userId ? { ...u, is_banned: true } : u));
-      } else if (action === 'unban') {
-        await supabase.from('veil_users').update({ is_banned: false }).eq('id', userId);
-        setUsers(users.map(u => u.id === userId ? { ...u, is_banned: false } : u));
-      } else if (action === 'add_sub') {
-        // Add 30 days
-        const user = users.find(u => u.id === userId);
-        const currentExp = (user.subscription_expires_at && new Date(user.subscription_expires_at) > new Date()) 
-          ? new Date(user.subscription_expires_at) 
-          : new Date();
-        const newExp = new Date(currentExp);
-        newExp.setDate(newExp.getDate() + 30);
-        await supabase.from('veil_users').update({ subscription_expires_at: newExp.toISOString() }).eq('id', userId);
-        setUsers(users.map(u => u.id === userId ? { ...u, subscription_expires_at: newExp.toISOString() } : u));
+      if (action === 'ban' || action === 'unban' || action === 'add_sub') {
+        const apiAction = action === 'add_sub' ? 'add_subscription' : action;
+        const resp = await fetch('/api/admin-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            initData, 
+            action: apiAction, 
+            targetUserId: userId,
+            data: action === 'add_sub' ? { days: 30 } : undefined
+          })
+        });
+        
+        const result = await resp.json();
+        if (!resp.ok) {
+          alert(`Ошибка: ${result.error || 'Неизвестная ошибка'}`);
+          return;
+        }
+
+        // Optimistic UI update
+        if (action === 'ban') {
+          setUsers(users.map(u => u.id === userId ? { ...u, is_banned: true } : u));
+        } else if (action === 'unban') {
+          setUsers(users.map(u => u.id === userId ? { ...u, is_banned: false } : u));
+        } else if (action === 'add_sub') {
+          setUsers(users.map(u => u.id === userId ? { ...u, subscription_expires_at: result.newExpiry } : u));
+        }
       } else {
-         alert(`Действие выполнено: ${label}`);
+        alert(`Действие выполнено: ${label}`);
       }
     } catch (e) {
+      console.error('Admin action error:', e);
       alert("Ошибка выполнения действия!");
     }
   };

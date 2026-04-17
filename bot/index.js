@@ -19,6 +19,15 @@ const WEBAPP_URL = process.env.WEBAPP_URL || 'https://veil-vpn.vercel.app';
 
 bot.start(async (ctx) => {
     try {
+        // Parse referral code from deep link: /start VEIL-XXXXX
+        const startPayload = ctx.startPayload; // e.g. "VEIL-12345"
+        let webAppUrl = WEBAPP_URL;
+        
+        if (startPayload && startPayload.startsWith('VEIL-')) {
+            webAppUrl = `${WEBAPP_URL}?ref=${startPayload}`;
+            console.log(`📎 Referral deep link: ${startPayload} from user ${ctx.from.id}`);
+        }
+
         await ctx.setChatMenuButton({
             type: 'web_app',
             text: '🔑 Открыть VPN',
@@ -30,7 +39,7 @@ bot.start(async (ctx) => {
             `👇 Нажмите кнопку ниже, чтобы запустить приложение и управлять подпиской!`;
 
         await ctx.replyWithMarkdown(welcomeText, Markup.inlineKeyboard([
-            Markup.button.webApp('🚀 Открыть приложение', WEBAPP_URL)
+            Markup.button.webApp('🚀 Открыть приложение', webAppUrl)
         ]));
     } catch (error) {
         console.error('Error in /start:', error);
@@ -53,41 +62,43 @@ bot.on('successful_payment', async (ctx) => {
     const payment = ctx.message.successful_payment;
     console.log('✅ Successful Payment:', payment);
 
-    // payload содержит данные, которые мы передали при создании инвойса (например: userId_planId)
+    // payload: sub_{telegramId}_{days}
     const payload = payment.invoice_payload;
     if (payload.startsWith('sub_')) {
-        const [_, userId, planDurationStr] = payload.split('_'); // sub_123456_30
+        const [_, tgIdStr, planDurationStr] = payload.split('_');
+        const telegramId = parseInt(tgIdStr);
         const planDuration = parseInt(planDurationStr);
 
         try {
-            // Если платеж прошел, начисляем подписку пользователю
+            // Fetch user by telegram_id to get UUID + current expiry
             const { data: user, error: fetchErr } = await supabase
                 .from('veil_users')
-                .select('subscription_expires_at')
-                .eq('telegram_id', userId)
+                .select('id, subscription_expires_at')
+                .eq('telegram_id', telegramId)
                 .single();
 
             if (!fetchErr && user) {
                 const now = new Date();
                 let currentExp = user.subscription_expires_at ? new Date(user.subscription_expires_at) : now;
-                if (currentExp < now) currentExp = now; // Если просрочено, отсчет заново
+                if (currentExp < now) currentExp = now;
 
-                currentExp.setDate(currentExp.getDate() + planDuration); // Добавляем дни подписки
+                currentExp.setDate(currentExp.getDate() + planDuration);
 
                 const { error: updateErr } = await supabase
                     .from('veil_users')
                     .update({
                         subscription_expires_at: currentExp.toISOString(),
-                        subscription_status: 'premium'
+                        subscription_tier: 'premium'
                     })
-                    .eq('telegram_id', userId);
+                    .eq('telegram_id', telegramId);
 
                 if (!updateErr) {
                     await ctx.reply(`🎉 Спасибо за покупку! Ваша PRO-подписка успешно продлена на ${planDuration} дней.`);
                     
-                    // Также логируем транзакцию
+                    // Log transaction with correct UUID (not telegram_id!)
                     await supabase.from('veil_transactions').insert({
-                        user_id: userId,
+                        user_id: user.id,
+                        type: 'subscription',
                         amount: payment.total_amount,
                         currency: payment.currency,
                         status: 'completed',
