@@ -11,7 +11,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const WEBAPP_URL = process.env.WEBAPP_URL || 'https://veil-vpn.vercel.app';
+const WEBAPP_URL = process.env.WEBAPP_URL || 'https://tvinck.github.io/veil-vpn/';
 const SUPPORT_URL = process.env.SUPPORT_URL || 'https://t.me/veil_support';
 const CHANNEL_URL = process.env.CHANNEL_URL || 'https://t.me/veil_vpn_channel';
 
