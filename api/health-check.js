@@ -78,14 +78,21 @@ export default async function handler(req, res) {
         let deactivatedKeys = 0;
         if (expiredUsers && expiredUsers.length > 0) {
             const userIds = expiredUsers.map(u => u.id);
-            const { count } = await supabase
+            // Count active keys before deactivating
+            const { count: activeCount } = await supabase
+                .from('veil_keys')
+                .select('*', { count: 'exact', head: true })
+                .in('user_id', userIds)
+                .eq('is_active', true);
+
+            // Deactivate keys
+            await supabase
                 .from('veil_keys')
                 .update({ is_active: false })
                 .in('user_id', userIds)
-                .eq('is_active', true)
-                .select('*', { count: 'exact', head: true });
+                .eq('is_active', true);
             
-            deactivatedKeys = count || 0;
+            deactivatedKeys = activeCount || 0;
             
             // Reset tier to free
             await supabase

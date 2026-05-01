@@ -52,30 +52,37 @@ export default function AdminView({ onBack }) {
       const { data: serversData } = await supabase.from('veil_servers').select('*');
       if (serversData) setServers(serversData);
 
-      // Fetch Transactions (veil_payments)
+      // Fetch Transactions (veil_payments) — last 50 for display
       const { data: trxData } = await supabase
         .from('veil_payments')
         .select(`*, veil_users(username, first_name)`)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(50);
       if (trxData) setTransactions(trxData);
+
+      // Fetch ALL completed payments for revenue (no limit)
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+      const { data: revData } = await supabase
+        .from('veil_payments')
+        .select('amount')
+        .eq('status', 'completed')
+        .gte('created_at', thirtyDaysAgo);
 
       // Calculate Stats
       if (usersData) {
         const total = usersData.length;
         const premium = usersData.filter(u => !u.is_banned && u.subscription_expires_at && new Date(u.subscription_expires_at) > new Date()).length;
-        setStats(prev => ({
-          ...prev,
+        const oneDayAgo = new Date(Date.now() - 86400000);
+        const newToday = usersData.filter(u => u.created_at && new Date(u.created_at) > oneDayAgo).length;
+        const rev = (revData || []).reduce((acc, curr) => acc + (curr.amount || 0), 0);
+        setStats({
           totalUsers: total,
           activePremium: premium,
-          onlineNow: serversData ? serversData.reduce((acc, s) => acc + (s.current_users || 0), 0) : 0
-        }));
-      }
-      
-      // Calculate revenue
-      if (trxData) {
-        const rev = trxData.filter(t => t.status === 'completed').reduce((acc, curr) => acc + (curr.amount || 0), 0);
-        setStats(prev => ({ ...prev, revenue: `${rev.toLocaleString()} ⭐` }));
+          onlineNow: serversData ? serversData.reduce((acc, s) => acc + (s.current_users || 0), 0) : 0,
+          new24h: newToday > 0 ? `+${newToday}` : '0',
+          revenue: `${rev.toLocaleString()} ⭐`,
+          revTransactions: (revData || []).length
+        });
       }
     } catch (err) {
       console.error("Error fetching admin data:", err);
@@ -207,7 +214,7 @@ export default function AdminView({ onBack }) {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <StatCard label="Всего клиентов" value={stats.totalUsers} icon={<Users size={20} color="var(--accent-light)" />} trend={stats.new24h} />
                   <StatCard label="Активных PRO" value={stats.activePremium} icon={<Activity size={20} color="var(--green)" />} trend={stats.totalUsers > 0 ? `${Math.round((stats.activePremium/stats.totalUsers)*100)}%` : '0%'} />
-                  <StatCard label="Доход (30 дней)" value={stats.revenue} icon={<CreditCard size={20} color="var(--orange)" />} trend="+12%" />
+                  <StatCard label="Доход (30 дней)" value={stats.revenue} icon={<CreditCard size={20} color="var(--orange)" />} trend={stats.revTransactions ? `${stats.revTransactions} платежей` : ''} />
                   <StatCard label="Онлайн сейчас" value={stats.onlineNow} icon={<Globe size={20} color="#3498db" />} />
                 </div>
                 

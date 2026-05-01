@@ -444,7 +444,7 @@ export const PLANS = {
     priceStars: 125,
     maxDevices: 3,
     trafficLimit: null,
-    features: ['Все серверы', 'Безлимитный трафик', 'Smart Routing', 'До 3 устройств', 'Shadowsocks fallback', 'Anti-DPI фрагментация'],
+    features: ['Все серверы', 'Безлимитный трафик', 'Smart Routing', 'До 3 устройств', 'Double VPN', 'Shadowsocks fallback', 'Anti-DPI фрагментация'],
   },
 };
 

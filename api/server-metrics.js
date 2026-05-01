@@ -1,15 +1,47 @@
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const ADMIN_USERNAME = 'artykosh';
+
+function verifyTelegramWebAppData(initData) {
+    if (!initData) return false;
+    try {
+        const urlParams = new URLSearchParams(initData);
+        const hash = urlParams.get('hash');
+        urlParams.delete('hash');
+        urlParams.sort();
+
+        let dataCheckString = '';
+        for (const [key, value] of urlParams.entries()) {
+            dataCheckString += `${key}=${value}\n`;
+        }
+        dataCheckString = dataCheckString.slice(0, -1);
+
+        const secretKey = crypto.createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest();
+        const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+
+        return calculatedHash === hash;
+    } catch (e) {
+        return false;
+    }
+}
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Verify admin access
+    // Verify admin access with proper Telegram signature check
     const initData = req.body.initData || '';
+    
+    const isValid = verifyTelegramWebAppData(initData);
+    if (!isValid && process.env.NODE_ENV === 'production') {
+        return res.status(401).json({ error: 'Invalid init data' });
+    }
+
     const tgUser = (() => {
         try {
             const params = new URLSearchParams(initData);
@@ -18,7 +50,7 @@ export default async function handler(req, res) {
         } catch { return null; }
     })();
 
-    if (!tgUser || tgUser.username !== 'artykosh') {
+    if (!tgUser || tgUser.username?.toLowerCase() !== ADMIN_USERNAME) {
         return res.status(403).json({ error: 'Access denied' });
     }
 

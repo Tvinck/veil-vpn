@@ -12,11 +12,22 @@ export default function SubscriptionView() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Safe compute days left
-  const expiresAt = user?.subscription_expires_at ? new Date(user.subscription_expires_at) : Date.now();
+  const expiresAt = user?.subscription_expires_at ? new Date(user.subscription_expires_at) : new Date();
   const daysLeft = Math.max(0, Math.ceil((expiresAt - Date.now()) / (1000 * 60 * 60 * 24)));
+  const totalSubDays = user?.subscription_tier === 'premium' ? 30 : 3; // scale progress bar
   const refCode = user?.referral_code || (user?.telegram_id ? `VEIL-${String(user.telegram_id).substring(0, 5)}` : 'VEIL-VP');
   const totalReferrals = user?.total_referrals || 0;
   const bonusDays = totalReferrals * 3;
+
+  // Russian plural for days
+  const pluralDays = (n) => {
+    const abs = Math.abs(n) % 100;
+    const last = abs % 10;
+    if (abs > 10 && abs < 20) return 'дней';
+    if (last > 1 && last < 5) return 'дня';
+    if (last === 1) return 'день';
+    return 'дней';
+  };
 
   const handleCopyRef = () => {
     navigator.clipboard?.writeText(`https://t.me/veilvpns_bot?start=${refCode}`);
@@ -63,12 +74,12 @@ export default function SubscriptionView() {
           <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--bg-primary)', overflow: 'hidden' }}>
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${(daysLeft / 3) * 100}%` }}
+              animate={{ width: `${Math.min((daysLeft / totalSubDays) * 100, 100)}%` }}
               style={{ height: '100%', background: daysLeft <= 1 ? 'var(--red)' : 'var(--accent)', borderRadius: 3 }}
             />
           </div>
           <span style={{ fontSize: 13, fontWeight: 600, color: daysLeft <= 1 ? 'var(--red)' : 'var(--text-primary)' }}>
-            {daysLeft} {daysLeft === 1 ? 'день' : 'дня'}
+            {daysLeft} {pluralDays(daysLeft)}
           </span>
         </div>
       </motion.div>
@@ -222,35 +233,68 @@ export default function SubscriptionView() {
 }
 
 function PlanCard({ plan, icon, isSelected, onSelect, popular }) {
+  const handleClick = () => {
+    onSelect();
+    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      whileTap={{ scale: 0.97 }}
       className="card"
-      onClick={onSelect}
+      onClick={handleClick}
       style={{
         cursor: 'pointer',
         borderColor: isSelected ? 'var(--accent)' : popular ? 'rgba(108,92,231,0.15)' : 'var(--border)',
         position: 'relative',
+        background: isSelected
+          ? 'linear-gradient(135deg, rgba(108,92,231,0.1), rgba(15,15,25,0.4))'
+          : popular
+            ? 'linear-gradient(135deg, rgba(30,30,50,0.5), rgba(15,15,25,0.3))'
+            : undefined,
+        borderWidth: isSelected ? 2 : 1,
+        transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
       }}
     >
       {popular && (
-        <div style={{ position: 'absolute', top: -1, right: 16, background: 'var(--accent)', padding: '3px 10px', borderBottomLeftRadius: 8, borderBottomRightRadius: 8, fontSize: 10, fontWeight: 700, color: 'white', letterSpacing: '0.05em' }}>
+        <div style={{
+          position: 'absolute', top: -1, right: 16,
+          background: 'linear-gradient(135deg, #6c5ce7, #a29bfe)',
+          padding: '3px 10px',
+          borderBottomLeftRadius: 8, borderBottomRightRadius: 8,
+          fontSize: 10, fontWeight: 700, color: 'white', letterSpacing: '0.06em',
+          boxShadow: '0 2px 8px rgba(108,92,231,0.3)',
+        }}>
           ПОПУЛЯРНЫЙ
         </div>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 10, background: isSelected ? 'var(--accent)' : 'var(--accent-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isSelected ? 'white' : 'var(--accent-light)', transition: 'all 0.2s' }}>
+        <motion.div
+          animate={isSelected ? { scale: [1, 1.1, 1] } : {}}
+          transition={{ duration: 0.3 }}
+          style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: isSelected
+              ? 'linear-gradient(135deg, var(--accent), var(--accent-light))'
+              : 'var(--accent-subtle)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: isSelected ? 'white' : 'var(--accent-light)',
+            transition: 'all 0.3s',
+            boxShadow: isSelected ? '0 4px 16px rgba(108,92,231,0.4)' : 'none',
+          }}
+        >
           {icon}
-        </div>
+        </motion.div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 17, fontWeight: 700 }}>{plan.nameRu}</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{plan.days} дней</div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)' }}>₽{plan.priceRub}</div>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{plan.priceStars} ⭐</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>{plan.priceStars} ⭐</div>
         </div>
       </div>
 
@@ -271,9 +315,19 @@ function PlanCard({ plan, icon, isSelected, onSelect, popular }) {
           layoutId="plan-check"
           style={{ position: 'absolute', top: 16, right: 16 }}
         >
-          <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', damping: 12, stiffness: 200 }}
+            style={{
+              width: 26, height: 26, borderRadius: '50%',
+              background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 12px rgba(108,92,231,0.5)',
+            }}
+          >
             <Check size={14} color="white" strokeWidth={3} />
-          </div>
+          </motion.div>
         </motion.div>
       )}
     </motion.div>

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Smartphone, QrCode, FileKey, ExternalLink, ChevronRight, ToggleLeft, ToggleRight, Info, Copy, Check, AlertTriangle, ChevronDown, ShieldAlert } from 'lucide-react';
+import { Zap, Smartphone, QrCode, FileKey, ExternalLink, ChevronRight, ToggleLeft, ToggleRight, Info, Copy, Check, AlertTriangle, ChevronDown, ShieldAlert, Shield, Layers } from 'lucide-react';
 import { DIRECT_DOMAINS, PROXY_DOMAINS, STEALTH_CONFIG } from '../config/routing';
 import { StealthIcon, TunnelIcon, GlobeEncrypted, FingerprintIcon } from '../components/Icons';
 import GuideModal from '../components/GuideModal';
@@ -8,10 +8,12 @@ import { useUser } from '../lib/UserContext';
 import { supabase } from '../lib/supabase';
 import { QRCodeSVG } from 'qrcode.react';
 
-export default function SettingsView({ onOpenAdmin }) {
+export default function SettingsView({ onOpenAdmin, doubleTunnel, setDoubleTunnel }) {
   const { user } = useUser();
   const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  const isAdmin = tgUser?.username === 'artykosh';
+  const adminUsername = 'artykosh';
+  const isAdmin = tgUser?.username?.toLowerCase() === adminUsername 
+    || (import.meta.env.DEV && (user?.username?.toLowerCase() === adminUsername || true));
   const [smartRouting, setSmartRouting] = useState(true);
   const [autoConnect, setAutoConnect] = useState(false);
   const [protocol, setProtocol] = useState('vless-reality');
@@ -94,6 +96,14 @@ export default function SettingsView({ onOpenAdmin }) {
           isLast={false}
         />
         <SettingRow
+          icon={<Layers size={18} color="#e056fd" />}
+          iconBg="rgba(224,86,253,0.1)"
+          label="Double VPN"
+          description="Двойной туннель (2 сервера)"
+          right={<Toggle value={doubleTunnel} onChange={() => { setDoubleTunnel(!doubleTunnel); window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('medium'); }} />}
+          isLast={false}
+        />
+        <SettingRow
           icon={<TunnelIcon size={18} color="var(--accent-light)" />}
           iconBg="var(--accent-subtle)"
           label="Протокол"
@@ -103,6 +113,34 @@ export default function SettingsView({ onOpenAdmin }) {
           isLast
         />
       </div>
+
+      {/* ── Double Tunnel Info ── */}
+      {doubleTunnel && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          exit={{ opacity: 0, height: 0 }}
+          className="card"
+          style={{ marginBottom: 16, background: 'linear-gradient(135deg, rgba(224,86,253,0.08), rgba(108,92,231,0.08))', border: '1px solid rgba(224,86,253,0.15)' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <Shield size={16} color="#e056fd" />
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#e056fd' }}>Двойное шифрование</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            <span style={{ padding: '3px 8px', borderRadius: 6, background: 'rgba(108,92,231,0.15)', color: 'var(--accent-light)', fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap' }}>Вы</span>
+            <span style={{ color: 'var(--text-muted)' }}>→</span>
+            <span style={{ padding: '3px 8px', borderRadius: 6, background: 'rgba(0,206,209,0.12)', color: '#00ced1', fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap' }}>Entry 🇫🇮</span>
+            <span style={{ color: 'var(--text-muted)' }}>→</span>
+            <span style={{ padding: '3px 8px', borderRadius: 6, background: 'rgba(39,174,96,0.12)', color: 'var(--green)', fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap' }}>Exit 🇩🇪</span>
+            <span style={{ color: 'var(--text-muted)' }}>→</span>
+            <span style={{ padding: '3px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.06)', fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap' }}>🌐</span>
+          </div>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.5 }}>
+            Entry-сервер видит только ваш IP, но не знает куда вы идёте. Exit-сервер видит трафик, но не знает кто вы. Максимальный уровень анонимности.
+          </p>
+        </motion.div>
+      )}
 
       {/* ── Stealth Config ── */}
       <p className="text-caption" style={{ marginBottom: 8 }}>Маскировка</p>
@@ -279,9 +317,18 @@ export default function SettingsView({ onOpenAdmin }) {
 
       {/* ── Footer ── */}
       <div style={{ textAlign: 'center', padding: '24px 0 8px' }}>
-        <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>VEIL v1.1 • Encrypted Access</p>
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+        <p style={{ fontSize: 13, fontWeight: 700 }}>
+          <span style={{
+            background: 'linear-gradient(135deg, #6c5ce7, #a29bfe)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>VEIL</span>
+          <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}> v2.0</span>
+        </p>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, fontFamily: 'var(--font-mono)', letterSpacing: '0.02em' }}>
           {DIRECT_DOMAINS.length} direct • {PROXY_DOMAINS.length} proxy • Anti-DPI {antiDPI ? '✅' : '❌'}
+        </p>
+        <p style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 6, opacity: 0.5 }}>
+          Encrypted Access • VLESS + Reality
         </p>
       </div>
       

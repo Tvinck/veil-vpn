@@ -38,18 +38,13 @@ export default function ServersView({ selected, onSelect }) {
             ? 100  // Coming soon = shown as full
             : Math.floor((s.current_users || 0) / (s.max_users || 1000) * 100);
           const load = Math.min(Math.max(calculatedLoad, 0), 100);
-          
-          // Ping: online servers get real-ish ping, coming_soon — high
-          let ping = isComingSoon
-            ? 999
-            : Math.floor(Math.random() * 20) + 30;
 
           return {
             ...s,
             flag_emoji: s.flag || s.flag_emoji || '🌐',
             country_name: s.location || s.country_name || 'Локация',
             load: load,
-            ping: ping,
+            ping: isComingSoon ? 999 : null, // null = measuring
             isComingSoon: isComingSoon,
             tier: 'all'
           };
@@ -57,9 +52,25 @@ export default function ServersView({ selected, onSelect }) {
         // Sort: online first, then coming_soon
         mapped.sort((a, b) => {
           if (a.isComingSoon !== b.isComingSoon) return a.isComingSoon ? 1 : -1;
-          return a.ping - b.ping;
+          return 0;
         });
         setServers(mapped);
+
+        // Measure real ping for online servers
+        for (const s of mapped) {
+          if (s.isComingSoon) continue;
+          try {
+            const resp = await fetch(`/api/ping?server_id=${s.id}`);
+            const result = await resp.json();
+            setServers(prev => prev.map(sv => 
+              sv.id === s.id ? { ...sv, ping: result.ping || 999 } : sv
+            ));
+          } catch {
+            setServers(prev => prev.map(sv => 
+              sv.id === s.id ? { ...sv, ping: 999 } : sv
+            ));
+          }
+        }
       }
       setLoading(false);
     }
@@ -188,19 +199,27 @@ export default function ServersView({ selected, onSelect }) {
             </div>
 
             {/* Stats */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, minWidth: 70 }}>
               {srv.isComingSoon ? (
                 <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>Недоступен</span>
               ) : (
                 <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <Signal size={12} color={getPingColor(srv.ping)} />
-                    <span style={{ color: getPingColor(srv.ping), fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{srv.ping}ms</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
+                    <Signal size={12} color={srv.ping === null ? 'var(--text-muted)' : getPingColor(srv.ping)} />
+                    <span style={{ color: srv.ping === null ? 'var(--text-muted)' : getPingColor(srv.ping), fontWeight: 700, fontVariantNumeric: 'tabular-nums', fontSize: 13 }}>{srv.ping === null ? '...' : `${srv.ping}ms`}</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <Users size={12} color={getLoadColor(srv.load)} />
-                    <span style={{ color: getLoadColor(srv.load), fontWeight: 600 }}>{srv.load}%</span>
+                  {/* Load bar */}
+                  <div style={{ width: '100%', height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${srv.load}%` }}
+                      transition={{ duration: 0.8, delay: idx * 0.05 }}
+                      style={{ height: '100%', borderRadius: 2, background: getLoadColor(srv.load) }}
+                    />
                   </div>
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 500 }}>
+                    {srv.load}% нагрузка
+                  </span>
                 </>
               )}
             </div>

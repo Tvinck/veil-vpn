@@ -103,7 +103,7 @@ export default async function handler(req, res) {
         } catch {}
     }
     
-    if (!isAuthorizedCron && !isAdmin && req.method !== 'GET') {
+    if (!isAuthorizedCron && !isAdmin) {
         return res.status(403).json({ error: 'Unauthorized' });
     }
 

@@ -24,7 +24,7 @@ function formatSpeed(bps) {
   return (bps / 1048576).toFixed(1) + ' MB/s';
 }
 
-export default function HomeView({ server, isConnected, setIsConnected, onSelectServer }) {
+export default function HomeView({ server, isConnected, setIsConnected, onSelectServer, doubleTunnel }) {
   const { user, loading: userLoading } = useUser();
   const [state, setState] = useState('disconnected');
   const [timer, setTimer] = useState(0);
@@ -127,7 +127,7 @@ export default function HomeView({ server, isConnected, setIsConnected, onSelect
         const res = await fetch('/api/provision-key', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: user.id, server_id: server.id })
+          body: JSON.stringify({ user_id: user.id, server_id: server.id, double_tunnel: doubleTunnel })
         });
         
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -269,15 +269,44 @@ export default function HomeView({ server, isConnected, setIsConnected, onSelect
       </AnimatePresence>
 
       {/* ── Status Badge ── */}
-      <motion.div layout style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+      <motion.div layout style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, marginBottom: 28 }}>
         <span className={`badge ${current.badgeCls}`}>
           <span className={`status-dot status-dot-${state === 'connected' ? 'green' : state === 'connecting' ? 'orange' : 'red'}`} />
           {current.label}
         </span>
+        {doubleTunnel && state === 'connected' && (
+          <motion.span
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="badge"
+            style={{ background: 'rgba(224,86,253,0.12)', color: '#e056fd', border: '1px solid rgba(224,86,253,0.2)', fontSize: 10 }}
+          >
+            🛡️ Double VPN
+          </motion.span>
+        )}
       </motion.div>
 
       {/* ══ CONNECT BUTTON ══ */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, position: 'relative', height: 180 }}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20, position: 'relative', height: 190 }}>
+
+        {/* Conic gradient rotating border (always visible, color changes by state) */}
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+          style={{
+            position: 'absolute', top: '50%', left: '50%',
+            width: 172, height: 172,
+            marginTop: -86, marginLeft: -86,
+            borderRadius: '50%',
+            background: state === 'connected'
+              ? 'conic-gradient(from 0deg, var(--green), rgba(0,214,143,0.1), var(--green), rgba(0,214,143,0.1), var(--green))'
+              : state === 'connecting'
+                ? 'conic-gradient(from 0deg, var(--orange), rgba(255,169,77,0.1), var(--orange), rgba(255,169,77,0.1), var(--orange))'
+                : 'conic-gradient(from 0deg, var(--accent), rgba(108,92,231,0.05), var(--accent-light), rgba(108,92,231,0.05), var(--accent))',
+            opacity: state === 'connecting' ? 0.8 : 0.4,
+            filter: 'blur(1px)',
+          }}
+        />
 
         {/* Ripple rings (when connected) */}
         {state === 'connected' && [0, 1, 2].map(i => (
@@ -288,7 +317,7 @@ export default function HomeView({ server, isConnected, setIsConnected, onSelect
               width: 160, height: 160, borderRadius: '50%',
               border: '1px solid rgba(0,214,143,0.15)',
             }}
-            animate={{ scale: [1, 2], opacity: [0.4, 0] }}
+            animate={{ scale: [1, 2.2], opacity: [0.4, 0] }}
             transition={{ duration: 3, repeat: Infinity, delay: i * 1, ease: 'easeOut' }}
           />
         ))}
@@ -301,23 +330,24 @@ export default function HomeView({ server, isConnected, setIsConnected, onSelect
               position: 'absolute', top: '50%', left: '50%',
               width: 5, height: 5, borderRadius: '50%',
               background: i % 2 === 0 ? 'var(--green)' : 'var(--accent-light)',
-              boxShadow: `0 0 6px ${i % 2 === 0 ? 'var(--green-glow)' : 'var(--accent-glow)'}`,
+              boxShadow: `0 0 8px ${i % 2 === 0 ? 'var(--green-glow)' : 'var(--accent-glow)'}`,
             }}
             animate={{ rotate: 360 }}
             transition={{ duration: 4 + i, repeat: Infinity, ease: 'linear' }}
             initial={false}
           >
-            <div style={{ position: 'relative', top: -(75 + i * 8), left: -(2.5) }} />
+            <div style={{ position: 'relative', top: -(78 + i * 8), left: -(2.5) }} />
           </motion.div>
         ))}
 
         <motion.button
-          whileTap={{ scale: 0.9 }}
+          whileTap={{ scale: 0.88 }}
+          whileHover={{ scale: 1.02 }}
           onClick={handleToggle}
           style={{
-            width: 160, height: 160,
+            width: 164, height: 164,
             borderRadius: '50%', border: 'none', cursor: 'pointer',
-            background: 'transparent',
+            background: '#06060c',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             position: 'relative', zIndex: 2,
             WebkitTapHighlightColor: 'transparent',
@@ -442,16 +472,34 @@ export default function HomeView({ server, isConnected, setIsConnected, onSelect
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.12 }}
+        whileTap={{ scale: 0.97 }}
         className="card"
-        style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', marginBottom: 12 }}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', marginBottom: 12,
+          background: 'linear-gradient(135deg, rgba(30,30,50,0.5), rgba(15,15,25,0.3))',
+          borderLeft: state === 'connected' ? '3px solid var(--green)' : '3px solid var(--accent)',
+        }}
         onClick={onSelectServer}
       >
-        <div style={{ fontSize: 30 }}>{sel.flag_emoji}</div>
+        <div style={{
+          fontSize: 30,
+          width: 48, height: 48,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          borderRadius: 12,
+          background: state === 'connected' ? 'rgba(0,214,143,0.08)' : 'rgba(108,92,231,0.08)',
+        }}>
+          {sel.flag_emoji}
+        </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 16, fontWeight: 700 }}>{sel.name}</div>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{sel.country_name}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+            {sel.country_name}
+            {state === 'connected' && <span style={{ color: 'var(--green)', fontWeight: 600 }}> • Подключено</span>}
+          </div>
         </div>
-        <ChevronRight size={20} color="var(--text-muted)" />
+        <motion.div animate={{ x: [0, 4, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>
+          <ChevronRight size={20} color="var(--text-muted)" />
+        </motion.div>
       </motion.div>
 
       {/* ── Info Grid ── */}
