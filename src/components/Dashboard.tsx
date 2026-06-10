@@ -27,6 +27,9 @@ import {
   Key
 } from 'lucide-react'
 
+
+import { SupportChat } from './dashboard/SupportChat'
+
 /** Доступные VPN-клиенты */
 type ClientApp = string
 
@@ -191,43 +194,31 @@ export default function Dashboard() {
     fetchUserData()
   }, [token])
 
-  /**
-   * Обработчик активации промокода или ключа продления подписки.
-   * Увеличивает expires_at подписки на 30 дней в базе данных.
-   */
   const handleActivateCode = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!activationCode.trim() || !subscription) return
 
     const code = activationCode.toUpperCase().trim()
 
-    // Валидный код начинается с 'VEIL-' или длиннее 8 символов
-    if (code.startsWith('VEIL-') || code.length >= 8) {
-      try {
-        const currentExpiry = new Date(subscription.expires_at)
-        const baseDate = currentExpiry.getTime() > new Date().getTime() ? currentExpiry : new Date()
-        const newExpiry = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000) // +30 дней
+    try {
+      const { data: success, error } = await supabase.rpc('activate_promo_code', {
+        p_sub_id: subscription.id,
+        p_code: code
+      })
 
-        const { error } = await supabase
-          .from('subscriptions')
-          .update({ 
-            expires_at: newExpiry.toISOString(),
-            status: 'active'
-          })
-          .eq('id', subscription.id)
-
-        if (error) throw error
-
-        setActivationStatus('success')
-        setActivationCode('')
-        await fetchUserData() // Перезагрузка данных профиля
-        setTimeout(() => setActivationStatus('idle'), 5000)
-      } catch (err) {
-        console.error('Ошибка при активации:', err)
+      if (error) throw error
+      if (!success) {
         setActivationStatus('error')
         setTimeout(() => setActivationStatus('idle'), 3000)
+        return
       }
-    } else {
+
+      setActivationStatus('success')
+      setActivationCode('')
+      await fetchUserData() // Перезагрузка данных
+      setTimeout(() => setActivationStatus('idle'), 5000)
+    } catch (err) {
+      console.error('Ошибка при активации:', err)
       setActivationStatus('error')
       setTimeout(() => setActivationStatus('idle'), 3000)
     }
@@ -288,10 +279,6 @@ export default function Dashboard() {
     setTimeout(() => setCopiedRef(false), 2000)
   }
 
-  /**
-   * Квест: Открывает Telegram-бота для привязки аккаунта.
-   * Начисляет +10 бонусных дней к подписке.
-   */
   const handleLinkBot = async () => {
     if (!profile || !subscription) return
     if (profile.tg_bot_linked) return
@@ -302,28 +289,20 @@ export default function Dashboard() {
       // 1. Открытие бота
       window.open('https://t.me/Veil_Vps_bot?start=' + token, '_blank')
 
-      // 2. Начисление +10 дней
-      const currentExpiry = new Date(subscription.expires_at)
-      const baseDate = currentExpiry.getTime() > new Date().getTime() ? currentExpiry : new Date()
-      const newExpiry = new Date(baseDate.getTime() + 10 * 24 * 60 * 60 * 1000)
+      // 2. Вызов безопасной функции RPC
+      const { data: success, error } = await supabase.rpc('claim_tg_bot_bonus', {
+        p_sub_id: subscription.id,
+        p_profile_id: profile.id
+      })
 
-      const { error: subErr } = await supabase
-        .from('subscriptions')
-        .update({ expires_at: newExpiry.toISOString() })
-        .eq('id', subscription.id)
+      if (error) throw error
 
-      if (subErr) throw subErr
-
-      const { error: profErr } = await supabase
-        .from('profiles')
-        .update({ tg_bot_linked: true })
-        .eq('id', profile.id)
-
-      if (profErr) throw profErr
-
-      setProfile(prev => prev ? { ...prev, tg_bot_linked: true } : null)
-      setSubscription(prev => prev ? { ...prev, expires_at: newExpiry.toISOString() } : null)
-      setTgBonusMsg('Бот успешно запущен! Вам начислено +10 дней VPN.')
+      if (success) {
+        await fetchUserData()
+        setTgBonusMsg('Бот успешно запущен! Вам начислено +10 дней VPN.')
+      } else {
+        setTgBonusMsg('Бонус уже был получен ранее.')
+      }
       setTimeout(() => setTgBonusMsg(null), 5000)
     } catch (err) {
       console.error(err)
@@ -334,10 +313,6 @@ export default function Dashboard() {
     }
   }
 
-  /**
-   * Квест: Открывает Telegram-канал и проверяет подписку.
-   * Начисляет +10 бонусных дней к подписке.
-   */
   const handleSubscribeChannel = async () => {
     if (!profile || !subscription) return
     if (profile.tg_channel_subscribed) return
@@ -348,28 +323,20 @@ export default function Dashboard() {
       // 1. Открытие ссылки на канал
       window.open('https://t.me/+tSeFgs6ymno0YjQy', '_blank')
 
-      // 2. Начисление +10 дней
-      const currentExpiry = new Date(subscription.expires_at)
-      const baseDate = currentExpiry.getTime() > new Date().getTime() ? currentExpiry : new Date()
-      const newExpiry = new Date(baseDate.getTime() + 10 * 24 * 60 * 60 * 1000)
+      // 2. Вызов безопасной функции RPC
+      const { data: success, error } = await supabase.rpc('claim_tg_channel_bonus', {
+        p_sub_id: subscription.id,
+        p_profile_id: profile.id
+      })
 
-      const { error: subErr } = await supabase
-        .from('subscriptions')
-        .update({ expires_at: newExpiry.toISOString() })
-        .eq('id', subscription.id)
+      if (error) throw error
 
-      if (subErr) throw subErr
-
-      const { error: profErr } = await supabase
-        .from('profiles')
-        .update({ tg_channel_subscribed: true })
-        .eq('id', profile.id)
-
-      if (profErr) throw profErr
-
-      setProfile(prev => prev ? { ...prev, tg_channel_subscribed: true } : null)
-      setSubscription(prev => prev ? { ...prev, expires_at: newExpiry.toISOString() } : null)
-      setTgBonusMsg('Вы подписались на канал! Начислено +10 дней VPN.')
+      if (success) {
+        await fetchUserData()
+        setTgBonusMsg('Вы подписались на канал! Начислено +10 дней VPN.')
+      } else {
+        setTgBonusMsg('Бонус уже был получен ранее.')
+      }
       setTimeout(() => setTgBonusMsg(null), 5000)
     } catch (err) {
       console.error(err)
@@ -1007,6 +974,9 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+
+      {/* Support Chat Widget */}
+      {profile && <SupportChat profileId={profile.id} />}
     </div>
   )
 }

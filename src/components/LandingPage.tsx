@@ -1,162 +1,11 @@
-import { useState } from 'react'
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Shield, Star, Eye, Lock } from 'lucide-react'
+import { ArrowRight, Eye, Lock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-// ═══════════════════════════════════════════════════════════════════
-// WORLD GLOBE SVG — dot-matrix sphere with location pins
-// ═══════════════════════════════════════════════════════════════════
-
-const WorldGlobe = () => {
-  const pins = [
-    { x: 402, y: 198, name: 'Europe',   left: false },
-    { x: 318, y: 182, name: 'UK',       left: true  },
-    { x: 448, y: 185, name: 'Spain',    left: false },
-    { x: 468, y: 206, name: 'Germany',  left: false },
-    { x: 334, y: 165, name: 'Sweden',   left: true  },
-    { x: 400, y: 222, name: 'Czech',    left: true  },
-    { x: 445, y: 230, name: 'Austria',  left: false },
-    { x: 474, y: 232, name: 'Italy',    left: false },
-    { x: 508, y: 214, name: 'Ukraine',  left: false },
-    { x: 196, y: 200, name: 'America',  left: true  },
-    { x: 264, y: 286, name: 'Brazil',   left: true  },
-  ]
-
-  const CX = 440, CY = 318, RX = 370, RY = 195
-
-  // Generate dot rows for full globe surface
-  const allDots: { x: number; y: number }[] = []
-  for (let row = 0; row <= 20; row++) {
-    const y = CY - RY + (row / 20) * RY * 2
-    const ratio = Math.sqrt(Math.max(0, 1 - ((y - CY) / RY) ** 2))
-    const w = RX * ratio
-    const numDots = Math.round(38 * ratio)
-    for (let col = 0; col <= numDots; col++) {
-      const x = CX - w + (col / Math.max(numDots, 1)) * w * 2
-      allDots.push({ x, y })
-    }
-  }
-
-  return (
-    <svg viewBox="0 0 880 460" xmlns="http://www.w3.org/2000/svg"
-      style={{ width: '100%', maxWidth: '860px', display: 'block' }}>
-      <defs>
-        <radialGradient id="gSurface" cx="42%" cy="28%" r="72%">
-          <stop offset="0%" stopColor="#270a12" />
-          <stop offset="55%" stopColor="#100406" />
-          <stop offset="100%" stopColor="#06020400" />
-        </radialGradient>
-        <radialGradient id="gBottomGlow" cx="50%" cy="95%" r="55%">
-          <stop offset="0%" stopColor="#e63950" stopOpacity="0.85" />
-          <stop offset="35%" stopColor="#e63950" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#e63950" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="gCenterGlow" cx="50%" cy="58%" r="48%">
-          <stop offset="0%" stopColor="#e63950" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#e63950" stopOpacity="0" />
-        </radialGradient>
-        <clipPath id="cpGlobe">
-          <ellipse cx={CX} cy={CY} rx={RX} ry={RY} />
-        </clipPath>
-        <filter id="fPinGlow" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-      </defs>
-
-      {/* Globe base fill */}
-      <ellipse cx={CX} cy={CY} rx={RX} ry={RY} fill="url(#gSurface)" />
-
-      {/* Dot matrix */}
-      <g clipPath="url(#cpGlobe)">
-        {allDots.map((d, i) => (
-          <circle key={i} cx={d.x} cy={d.y} r="1.9"
-            fill="#e63950"
-            opacity={d.y > CY ? 0.48 : 0.18} />
-        ))}
-      </g>
-
-      {/* Latitude grid ellipses */}
-      <g clipPath="url(#cpGlobe)" stroke="#e63950" strokeWidth="0.7" fill="none" opacity="0.14">
-        {[CY - 130, CY - 85, CY - 40, CY, CY + 45, CY + 90, CY + 130].map((y, i) => {
-          const ratio = Math.sqrt(Math.max(0, 1 - ((y - CY) / RY) ** 2))
-          return <ellipse key={i} cx={CX} cy={y} rx={RX * ratio} ry={12 * ratio + 2} />
-        })}
-      </g>
-
-      {/* Longitude grid arcs */}
-      <g clipPath="url(#cpGlobe)" stroke="#e63950" strokeWidth="0.7" fill="none" opacity="0.11">
-        {[-160, -110, -65, -22, 22, 65, 110, 160].map((dx, i) => {
-          const scaleX = 1 - Math.abs(dx) / 220
-          return <ellipse key={i} cx={CX + dx * 0.65} cy={CY} rx={RX * scaleX * 0.12 + 4} ry={RY} />
-        })}
-      </g>
-
-      {/* Bottom red glow */}
-      <ellipse cx={CX} cy={498} rx={330} ry={145} fill="url(#gBottomGlow)" />
-      {/* Center ambient */}
-      <ellipse cx={CX} cy={CY} rx={250} ry={130} fill="url(#gCenterGlow)" />
-
-      {/* Location Pins */}
-      {pins.map((p, i) => {
-        const boxW = 56, boxH = 20
-        const boxX = p.left ? p.x - boxW - 10 : p.x + 10
-        const boxY = p.y - 26
-        return (
-          <g key={i} filter="url(#fPinGlow)">
-            <circle cx={p.x} cy={p.y} r="12" fill="#e63950" opacity="0.14" />
-            <circle cx={p.x} cy={p.y} r="6"  fill="#e63950" opacity="0.92" />
-            <circle cx={p.x} cy={p.y} r="2.5" fill="#ff8fa3" />
-            <rect x={boxX} y={boxY} width={boxW} height={boxH} rx="5"
-              fill="rgba(8,4,6,0.9)" stroke="rgba(230,57,80,0.55)" strokeWidth="1" />
-            <text x={boxX + boxW / 2} y={boxY + 13.5} textAnchor="middle"
-              fill="white" fontSize="9" fontFamily="Inter,-apple-system,sans-serif" fontWeight="700">
-              {p.name}
-            </text>
-            <line x1={p.x} y1={p.y - 6} x2={p.left ? p.x - 10 : p.x + 10} y2={boxY + boxH}
-              stroke="#e63950" strokeWidth="1" opacity="0.55" />
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// NAV LOGO
-// ═══════════════════════════════════════════════════════════════════
-
-const VeilLogo = () => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-    <div style={{
-      width: '34px', height: '34px', background: '#e63950', borderRadius: '9px',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      boxShadow: '0 0 18px rgba(230,57,80,0.55)',
-    }}>
-      <Shield size={18} color="#fff" strokeWidth={2.5} />
-    </div>
-    <span style={{
-      fontFamily: 'var(--font-cyber)', fontSize: '1.25rem',
-      fontWeight: 900, letterSpacing: '2px', color: '#fff',
-    }}>
-      VEIL<span style={{ color: '#e63950' }}>VPN</span>
-    </span>
-  </div>
-)
-
-// ═══════════════════════════════════════════════════════════════════
-// BADGE component
-// ═══════════════════════════════════════════════════════════════════
-
-const Badge = ({ text }: { text: string }) => (
-  <div style={{
-    display: 'inline-flex', alignItems: 'center', gap: '8px',
-    background: 'rgba(230,57,80,0.09)', border: '1px solid rgba(230,57,80,0.32)',
-    borderRadius: '6px', padding: '6px 14px', width: 'fit-content',
-  }}>
-    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#e63950', boxShadow: '0 0 6px #e63950' }} />
-    <span style={{ fontSize: '0.73rem', fontWeight: 700, color: '#e63950', fontFamily: 'var(--font-cyber)', letterSpacing: '0.8px' }}>{text}</span>
-  </div>
-)
+import { WorldGlobe } from './ui/WorldGlobe'
+import { VeilLogo } from './ui/VeilLogo'
+import { Badge } from './landing/Badge'
+import { Pricing } from './landing/Pricing'
+import { Reviews } from './landing/Reviews'
 
 // ═══════════════════════════════════════════════════════════════════
 // MAIN LANDING PAGE
@@ -164,42 +13,10 @@ const Badge = ({ text }: { text: string }) => (
 
 export default function LandingPage() {
   const navigate = useNavigate()
-  const [activeReview, setActiveReview] = useState(0)
 
-  const plans = [
-    {
-      name: 'Базовый', desc: 'Идеально для смартфона',
-      price: '150₽', period: '/мес',
-      features: ['Глобальная сеть серверов', 'Трафик без лимитов', '1 устройство', 'Поддержка 24/7', 'Высокая скорость'],
-      featured: false,
-    },
-    {
-      name: 'Для роутера', desc: 'Для всей семьи',
-      price: '250₽', period: '/мес', badge: 'ХИТ ПРОДАЖ',
-      features: ['Глобальная сеть серверов', 'Настройка на роутере', 'Все домашние устройства', 'Обход блокировок ТВ', 'Защита от утечек', 'Поддержка 24/7'],
-      featured: true,
-    },
-    {
-      name: 'Всё вместе', desc: 'Максимум возможностей',
-      price: '400₽', period: '/мес',
-      features: ['Глобальная сеть серверов', 'Роутер + личные устройства', 'Шифрование военного класса', 'Обход любых блокировок', 'Защита от утечек', 'Приоритетная поддержка'],
-      featured: false,
-    },
-  ]
-
-  const reviews = [
-    { name: 'Алексей Петров', role: 'Разработчик, Москва', stars: 5,
-      text: 'Veil VPN полностью изменил мой опыт. Теперь могу без ограничений работать с любыми сервисами. Каждый раз, когда подключаюсь к публичному Wi-Fi — чувствую себя в безопасности.' },
-    { name: 'Мария Соколова', role: 'Дизайнер, Санкт-Петербург', stars: 5,
-      text: 'Лучший VPN из всех что пробовала. Установка за 2 минуты, работает на всех устройствах. Скорость не падает даже при 4K-стриминге. Однозначно рекомендую!' },
-    { name: 'Дмитрий Иванов', role: 'Фрилансер, Казань', stars: 5,
-      text: 'Протокол VLESS Reality — что-то невероятное. Провайдер вообще не видит VPN-трафик. Все стриминговые сервисы работают идеально. Пользуюсь уже год.' },
-  ]
-
-  const ticker = ['BROWSE FREELY', 'SECURE ANYWHERE', 'DIGITAL SHIELD', 'SAFE & FAST', 'ZERO LOGS', 'MILITARY GRADE']
+  const ticker = ['БЕЗОПАСНЫЙ СЕРФИНГ', 'ЦИФРОВОЙ ЩИТ', 'БЕЗ ЛОГОВ', 'ВЫСОКАЯ СКОРОСТЬ', 'ПОЛНАЯ АНОНИМНОСТЬ', 'ВОЕННОЕ ШИФРОВАНИЕ']
 
   const bg = '#0a0a0f'
-  const card = 'rgba(255,255,255,0.028)'
   const border = 'rgba(255,255,255,0.07)'
   const muted = 'rgba(255,255,255,0.48)'
   const red = '#e63950'
@@ -322,100 +139,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── PRICING ── */}
-      <section style={{ padding: '60px 6% 100px' }} id="pricing">
-        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <Badge text="Простые тарифы · Максимальная защита" />
-          <h2 style={{ marginTop: '18px', fontSize: 'clamp(1.8rem, 3.2vw, 2.5rem)', fontWeight: 900, fontFamily: 'var(--font-title)' }}>
-            Гибкие VPN-тарифы для каждого пользователя
-          </h2>
-        </div>
-
-        <div className="sec-pricing-grid">
-          {plans.map((plan, i) => (
-            <div key={i} className={`sec-plan-card ${plan.featured ? 'sec-plan-featured' : ''}`}>
-              {plan.badge && (
-                <div className="sec-plan-badge">{plan.badge}</div>
-              )}
-              <div>
-                <p style={{ fontSize: '0.75rem', color: muted, fontWeight: 600, marginBottom: '5px' }}>{plan.desc}</p>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff', fontFamily: 'var(--font-title)' }}>{plan.name} план</h3>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                <span style={{ fontSize: '2.3rem', fontWeight: 900, color: plan.featured ? red : '#fff', fontFamily: 'var(--font-cyber)' }}>
-                  {plan.price}
-                </span>
-                <span style={{ fontSize: '0.82rem', color: muted, fontWeight: 600 }}>{plan.period}</span>
-              </div>
-              <button className={plan.featured ? 'btn-red-primary' : 'btn-ghost-plan'}
-                onClick={() => navigate('/KUq0yqj3mW_T79on')} style={{ width: '100%', justifyContent: 'center' }}>
-                Выбрать план →
-              </button>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {plan.features.map((f, j) => (
-                  <li key={j} style={{ display: 'flex', alignItems: 'center', gap: '9px', fontSize: '0.84rem', color: 'rgba(255,255,255,0.68)' }}>
-                    <Check size={13} color={red} strokeWidth={2.5} style={{ flexShrink: 0 }} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
+      <Pricing />
 
       {/* ── REVIEWS ── */}
-      <section className="sec-reviews-grid" style={{ padding: '60px 6% 100px' }}>
-        {/* Left */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <Badge text="Отзывы клиентов" />
-          <h2 style={{ fontSize: 'clamp(1.7rem, 3vw, 2.3rem)', fontWeight: 900, fontFamily: 'var(--font-title)', lineHeight: 1.2 }}>
-            Что говорят наши клиенты<br />о Veil VPN
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '10px' }}>
-            {[
-              { label: 'Happy Users Worldwide', value: '18,400+' },
-              { label: 'Satisfaction Rate', value: '98%' },
-            ].map(s => (
-              <div key={s.label}>
-                <p style={{ fontSize: '0.72rem', color: muted, fontWeight: 600, marginBottom: '8px' }}>
-                  <span style={{ color: red, marginRight: '4px' }}>→</span>{s.label}
-                </p>
-                <div style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-cyber)', color: '#fff' }}>{s.value}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right — review card */}
-        <div>
-          <div style={{ background: card, border: `1px solid ${border}`, borderRadius: '20px', padding: '30px', position: 'relative' }}>
-            <div style={{ display: 'flex', gap: '4px', marginBottom: '16px' }}>
-              {Array.from({ length: reviews[activeReview].stars }).map((_, i) => (
-                <Star key={i} size={15} fill={red} color={red} />
-              ))}
-            </div>
-            <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.72)', lineHeight: 1.68, marginBottom: '22px' }}>
-              "{reviews[activeReview].text}"
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fff' }}>{reviews[activeReview].name}</div>
-                <div style={{ fontSize: '0.75rem', color: muted, marginTop: '3px' }}>{reviews[activeReview].role}</div>
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="review-nav-btn"
-                  onClick={() => setActiveReview(p => (p - 1 + reviews.length) % reviews.length)}>
-                  <ChevronLeft size={16} />
-                </button>
-                <button className="review-nav-btn review-nav-btn-active"
-                  onClick={() => setActiveReview(p => (p + 1) % reviews.length)}>
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <Reviews />
 
       {/* ── CTA BANNER ── */}
       <section style={{ padding: '0 6% 100px' }}>
