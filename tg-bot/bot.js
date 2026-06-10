@@ -1,4 +1,4 @@
-import { Telegraf, Markup } from 'telegraf'
+import { Telegraf, Markup, session } from 'telegraf'
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 
@@ -9,6 +9,10 @@ dotenv.config()
  * Используем переменные окружения для защиты токенов.
  */
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN)
+
+// Подключаем middleware для хранения состояний сессий (в оперативной памяти)
+bot.use(session({ defaultSession: () => ({ support_mode: false }) }))
+
 const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY)
 
 /**
@@ -30,6 +34,10 @@ const formatTraffic = (bytes) => {
  * - Иначе, предлагает купить VPN или войти на сайт.
  */
 bot.start(async (ctx) => {
+  if (ctx.session) {
+    ctx.session.support_mode = false
+    ctx.session.support_greeted = false
+  }
   try {
     const startPayload = ctx.message.text.split(' ')[1]
     const tgUser = ctx.from
@@ -111,6 +119,7 @@ bot.start(async (ctx) => {
  * Запрашивает активные подписки пользователя из базы и выводит их статус, сроки и ключи.
  */
 bot.hears('🛡 Мои подписки', async (ctx) => {
+  if (ctx.session.support_mode) return
   try {
     const tgUser = ctx.from
     
@@ -166,6 +175,7 @@ bot.hears('🛡 Мои подписки', async (ctx) => {
  * Отправляет ссылки на тарифы.
  */
 bot.hears('💳 Продлить/Купить', (ctx) => {
+  if (ctx.session.support_mode) return
   try {
     ctx.reply('<b>Выберите тариф для покупки:</b>\n\n🔹 Базовый (150₽)\n🔹 Для роутера (250₽)\n🔹 Всё вместе (400₽)', {
       parse_mode: 'HTML',
@@ -182,6 +192,7 @@ bot.hears('💳 Продлить/Купить', (ctx) => {
  * Обработчик кнопки "🌐 На сайт".
  */
 bot.hears('🌐 На сайт', (ctx) => {
+  if (ctx.session.support_mode) return
   try {
     ctx.reply('Нажмите на кнопку ниже, чтобы открыть сайт Veil VPN.', {
       ...Markup.inlineKeyboard([
@@ -197,10 +208,34 @@ bot.hears('🌐 На сайт', (ctx) => {
  * Обработчик кнопки "❓ Помощь".
  */
 bot.hears('❓ Помощь', (ctx) => {
+  if (ctx.session.support_mode) return
   try {
-    ctx.reply('Напишите ваш вопрос прямо сюда, и наш сотрудник скоро вам ответит! 🧑‍💻')
+    ctx.session.support_mode = true
+    ctx.reply('Напишите подробно ваш вопрос или проблему, сотрудник подключится в ближайшее время. 🧑‍💻', {
+      ...Markup.keyboard([
+        ['❌ Завершить диалог']
+      ]).resize()
+    })
   } catch (error) {
     console.error('Ошибка в "Помощь":', error)
+  }
+})
+
+/**
+ * Выход из режима поддержки.
+ */
+bot.hears('❌ Завершить диалог', (ctx) => {
+  try {
+    ctx.session.support_mode = false
+    ctx.session.support_greeted = false
+    ctx.reply('Диалог завершен. Чем еще могу помочь?', {
+      ...Markup.keyboard([
+        ['🛡 Мои подписки', '💳 Продлить/Купить'],
+        ['❓ Помощь', '🌐 На сайт']
+      ]).resize()
+    })
+  } catch (error) {
+    console.error('Ошибка при выходе из поддержки:', error)
   }
 })
 
@@ -210,6 +245,15 @@ bot.hears('❓ Помощь', (ctx) => {
  */
 bot.on('text', async (ctx) => {
   try {
+    if (!ctx.session.support_mode) {
+      return ctx.reply('Я не понимаю эту команду. Пожалуйста, используйте кнопки меню ниже.', {
+        ...Markup.keyboard([
+          ['🛡 Мои подписки', '💳 Продлить/Купить'],
+          ['❓ Помощь', '🌐 На сайт']
+        ]).resize()
+      })
+    }
+
     const tgUser = ctx.from
     const text = ctx.message.text
     
@@ -246,8 +290,16 @@ bot.on('text', async (ctx) => {
       console.error('Ошибка при сохранении сообщения:', insertError)
       return ctx.reply('Не удалось отправить сообщение. Попробуйте позже.')
     }
-
-    ctx.reply('Ваш вопрос получен! Наш сотрудник скоро вам ответит. 🧑‍💻')
+    
+    // Подтверждение только при первом сообщении в рамках сессии
+    if (!ctx.session.support_greeted) {
+      ctx.session.support_greeted = true
+      ctx.reply('Ваш вопрос получен! Вы можете продолжать писать сообщения сюда. Чтобы выйти из чата, нажмите кнопку ниже.', {
+        ...Markup.keyboard([
+          ['❌ Завершить диалог']
+        ]).resize()
+      })
+    }
   } catch (error) {
     console.error('Критическая ошибка в обработчике текста:', error)
   }
