@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { MessageSquare, X, Send } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export const SupportChat = ({ profileId }: { profileId: string }) => {
   const [isOpen, setIsOpen] = useState(false)
@@ -86,10 +87,14 @@ export const SupportChat = ({ profileId }: { profileId: string }) => {
   }
 
   return (
-    <>
+    <AnimatePresence mode="wait">
       {/* Floating Button */}
-      {!isOpen && (
-        <button 
+      {!isOpen ? (
+        <motion.button 
+          key="chat-trigger-btn"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
           onClick={() => setIsOpen(true)}
           style={{
             position: 'fixed', bottom: '30px', right: '30px', zIndex: 50,
@@ -98,29 +103,34 @@ export const SupportChat = ({ profileId }: { profileId: string }) => {
             boxShadow: '0 10px 25px rgba(230,57,80,0.5)',
             display: 'flex', alignItems: 'center', gap: '10px',
             fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
-            border: 'none', transition: 'transform 0.2s'
+            border: 'none'
           }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
           <MessageSquare size={20} />
           Возникли вопросы? Мы поможем
-        </button>
-      )}
-
-      {/* Chat Window */}
-      {isOpen && (
-        <div style={{
-          position: 'fixed', bottom: '30px', right: '30px', zIndex: 50,
-          width: '350px', height: '500px',
-          background: 'rgba(15,10,12,0.95)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(230,57,80,0.3)',
-          borderRadius: '20px',
-          boxShadow: '0 15px 40px rgba(0,0,0,0.6)',
-          display: 'flex', flexDirection: 'column',
-          overflow: 'hidden'
-        }}>
+        </motion.button>
+      ) : (
+        /* Chat Window */
+        <motion.div 
+          key="chat-window-drawer"
+          initial={{ opacity: 0, scale: 0.85, y: 30, transformOrigin: 'bottom right' }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.85, y: 30 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+          style={{
+            position: 'fixed', bottom: '30px', right: '30px', zIndex: 50,
+            width: '350px', height: '500px',
+            background: 'rgba(15,10,12,0.95)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(230,57,80,0.3)',
+            borderRadius: '20px',
+            boxShadow: '0 15px 40px rgba(0,0,0,0.6)',
+            display: 'flex', flexDirection: 'column',
+            overflow: 'hidden'
+          }}
+        >
           {/* Header */}
           <div style={{
             background: 'rgba(230,57,80,0.1)',
@@ -147,25 +157,33 @@ export const SupportChat = ({ profileId }: { profileId: string }) => {
                 Напишите нам, если у вас возникли трудности. Мы на связи!
               </div>
             ) : (
-              messages.map(msg => {
-                const isClient = msg.is_from_user === true
-                return (
-                  <div key={msg.id} style={{
-                    alignSelf: isClient ? 'flex-end' : 'flex-start',
-                    maxWidth: '85%',
-                    background: isClient ? '#e63950' : 'rgba(255,255,255,0.1)',
-                    color: '#fff',
-                    padding: '10px 14px',
-                    borderRadius: '14px',
-                    borderBottomRightRadius: isClient ? '4px' : '14px',
-                    borderBottomLeftRadius: !isClient ? '4px' : '14px',
-                    fontSize: '0.85rem',
-                    lineHeight: 1.5
-                  }}>
-                    {msg.message}
-                  </div>
-                )
-              })
+              <AnimatePresence initial={false}>
+                {messages.map(msg => {
+                  const isClient = msg.is_from_user === true
+                  return (
+                    <motion.div 
+                      key={msg.id} 
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.15 }}
+                      style={{
+                        alignSelf: isClient ? 'flex-end' : 'flex-start',
+                        maxWidth: '85%',
+                        background: isClient ? '#e63950' : 'rgba(255,255,255,0.1)',
+                        color: '#fff',
+                        padding: '10px 14px',
+                        borderRadius: '14px',
+                        borderBottomRightRadius: isClient ? '4px' : '14px',
+                        borderBottomLeftRadius: !isClient ? '4px' : '14px',
+                        fontSize: '0.85rem',
+                        lineHeight: 1.5
+                      }}
+                    >
+                      {msg.message}
+                    </motion.div>
+                  )
+                })}
+              </AnimatePresence>
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -201,8 +219,9 @@ export const SupportChat = ({ profileId }: { profileId: string }) => {
               <Send size={16} />
             </button>
           </form>
-        </div>
+        </motion.div>
       )}
-    </>
+    </AnimatePresence>
   )
 }
+

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Shield, Check, CreditCard, Loader2, Mail } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 export default function Checkout() {
   const navigate = useNavigate()
@@ -98,23 +99,34 @@ export default function Checkout() {
             {plans.map((plan) => {
               const isSelected = selectedPlan === plan.id
               return (
-                <div 
+                <motion.div 
                   key={plan.id}
                   onClick={() => setSelectedPlan(plan.id)}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  className="relative overflow-hidden"
                   style={{
                     background: isSelected ? 'rgba(230,57,80,0.08)' : 'rgba(255,255,255,0.02)',
                     border: `2px solid ${isSelected ? red : 'rgba(255,255,255,0.08)'}`,
                     borderRadius: '16px',
                     padding: '20px',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
+                    transition: 'border-color 0.2s, background-color 0.2s',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '12px',
-                    boxShadow: isSelected ? '0 0 20px rgba(230,57,80,0.15)' : 'none'
+                    boxShadow: isSelected ? '0 0 20px rgba(230,57,80,0.12)' : 'none'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  {isSelected && (
+                    <motion.div
+                      layoutId="active-checkout-plan"
+                      className="absolute inset-0 rounded-[14px]"
+                      style={{ border: `2px solid ${red}`, margin: '-2px', pointerEvents: 'none', boxShadow: '0 0 15px rgba(230,57,80,0.15)' }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                    />
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
                     <div>
                       <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff', fontFamily: 'var(--font-title)' }}>{plan.name}</h3>
                       <p style={{ fontSize: '0.8rem', color: isSelected ? '#ff8fa3' : 'rgba(255,255,255,0.5)', fontWeight: 600, marginTop: '4px' }}>{plan.desc}</p>
@@ -125,7 +137,7 @@ export default function Checkout() {
                   </div>
                   
                   {isSelected && (
-                    <div style={{ borderTop: `1px solid rgba(230,57,80,0.2)`, paddingTop: '12px', marginTop: '4px' }}>
+                    <div style={{ borderTop: `1px solid rgba(230,57,80,0.2)`, paddingTop: '12px', marginTop: '4px', position: 'relative', zIndex: 1 }}>
                       <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {plan.features.map((f, idx) => (
                           <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>
@@ -135,7 +147,7 @@ export default function Checkout() {
                       </ul>
                     </div>
                   )}
-                </div>
+                </motion.div>
               )
             })}
           </div>

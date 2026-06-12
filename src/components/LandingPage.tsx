@@ -7,6 +7,8 @@ import { Badge } from './landing/Badge'
 import { Pricing } from './landing/Pricing'
 import { Reviews } from './landing/Reviews'
 
+import { TiltCard } from './ui/TiltCard'
+
 // ═══════════════════════════════════════════════════════════════════
 // MAIN LANDING PAGE
 // ═══════════════════════════════════════════════════════════════════
@@ -108,33 +110,39 @@ export default function LandingPage() {
 
         <div className="sec-features-grid mobile-grid-1">
           {/* Card 1 */}
-          <div className="sec-feature-card sec-feature-card-red">
-            <div className="sec-feat-icon" style={{ background: 'rgba(230,57,80,0.14)', border: '1px solid rgba(230,57,80,0.3)' }}>
-              <Eye size={22} color={red} strokeWidth={2} />
+          <TiltCard className="h-full">
+            <div className="sec-feature-card sec-feature-card-red h-full">
+              <div className="sec-feat-icon" style={{ background: 'rgba(230,57,80,0.14)', border: '1px solid rgba(230,57,80,0.3)' }}>
+                <Eye size={22} color={red} strokeWidth={2} />
+              </div>
+              <h3 className="sec-feat-title">Полная конфиденциальность в сети</h3>
+              <p className="sec-feat-desc">Ваша история браузера и личная информация надежно защищены от хакеров, провайдеров и слежки шифрованием военного уровня.</p>
             </div>
-            <h3 className="sec-feat-title">Полная конфиденциальность в сети</h3>
-            <p className="sec-feat-desc">Ваша история браузера и личная информация надежно защищены от хакеров, провайдеров и слежки шифрованием военного уровня.</p>
-          </div>
+          </TiltCard>
 
           {/* Card 2 — video/glow */}
-          <div className="sec-feature-card sec-feature-card-glow">
-            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 65% 30%, rgba(230,57,80,0.28) 0%, transparent 60%)', borderRadius: '20px' }} />
-            <div style={{ position: 'relative', zIndex: 1, marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '46px', height: '46px', borderRadius: '50%', background: red, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 22px rgba(230,57,80,0.6)', flexShrink: 0 }}>
-                <svg width="13" height="16" viewBox="0 0 13 16" fill="white"><path d="M0 0l13 8-13 8V0z" /></svg>
+          <TiltCard className="h-full">
+            <div className="sec-feature-card sec-feature-card-glow h-full relative overflow-hidden">
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 65% 30%, rgba(230,57,80,0.28) 0%, transparent 60%)', borderRadius: '20px' }} />
+              <div style={{ position: 'relative', zIndex: 1, marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '46px', height: '46px', borderRadius: '50%', background: red, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 22px rgba(230,57,80,0.6)', flexShrink: 0 }}>
+                  <svg width="13" height="16" viewBox="0 0 13 16" fill="white"><path d="M0 0l13 8-13 8V0z" /></svg>
+                </div>
+                <span style={{ fontSize: '0.95rem', fontWeight: 700 }}>Как это работает</span>
               </div>
-              <span style={{ fontSize: '0.95rem', fontWeight: 700 }}>Как это работает</span>
             </div>
-          </div>
+          </TiltCard>
 
           {/* Card 3 */}
-          <div className="sec-feature-card sec-feature-card-dark">
-            <div className="sec-feat-icon" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <Lock size={22} color="rgba(255,255,255,0.8)" strokeWidth={2} />
+          <TiltCard className="h-full">
+            <div className="sec-feature-card sec-feature-card-dark h-full">
+              <div className="sec-feat-icon" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <Lock size={22} color="rgba(255,255,255,0.8)" strokeWidth={2} />
+              </div>
+              <h3 className="sec-feat-title">Доступ откуда угодно и когда угодно</h3>
+              <p className="sec-feat-desc">Получите доступ к любимому контенту без ограничений из любой точки мира. Один ключ для всех устройств.</p>
             </div>
-            <h3 className="sec-feat-title">Доступ откуда угодно и когда угодно</h3>
-            <p className="sec-feat-desc">Получите доступ к любимому контенту без ограничений из любой точки мира. Один ключ для всех устройств.</p>
-          </div>
+          </TiltCard>
         </div>
       </section>
 
