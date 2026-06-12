@@ -10,17 +10,26 @@
     "start": "concurrently \"vite preview --host\" \"node tg-bot/bot.js\" \"node tg-bot/sync.js\""
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
     "@supabase/supabase-js": "^2.43.4",
+    "canvas-confetti": "^1.9.4",
+    "clsx": "^2.1.1",
     "framer-motion": "^12.40.0",
     "lucide-react": "^0.395.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.17.0",
-    "ssh2": "^1.17.0"
+    "ssh2": "^1.17.0",
+    "tailwind-merge": "^3.6.0",
+    "three": "^0.184.0"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@types/three": "^0.184.1",
     "@vitejs/plugin-react": "^4.3.1",
     "concurrently": "^10.0.3",
     "typescript": "^5.2.2",
