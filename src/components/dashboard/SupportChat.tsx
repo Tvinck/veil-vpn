@@ -36,7 +36,12 @@ export const SupportChat = ({ profileId }: { profileId: string }) => {
         table: 'support_messages',
         filter: `user_id=eq.${profileId}` 
       }, payload => {
-        setMessages(prev => [...prev, payload.new])
+        setMessages(prev => {
+          if (prev.some(m => m.message === payload.new.message && m.created_at.slice(0, 16) === payload.new.created_at.slice(0, 16))) {
+            return prev
+          }
+          return [...prev, payload.new]
+        })
       })
       .subscribe()
 
@@ -56,7 +61,16 @@ export const SupportChat = ({ profileId }: { profileId: string }) => {
     const msgText = newMessage.trim()
     setNewMessage('')
 
-    // Insert optimistic? No, we will wait for realtime, but let's just insert
+    const tempMsg = {
+      id: crypto.randomUUID(),
+      user_id: profileId,
+      is_from_user: true,
+      message: msgText,
+      project: 'Veil VPN',
+      created_at: new Date().toISOString()
+    }
+    setMessages(prev => [...prev, tempMsg])
+
     const { error } = await supabase
       .from('support_messages')
       .insert({
