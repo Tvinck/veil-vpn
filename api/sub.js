@@ -54,7 +54,25 @@ export default async function handler(req, res) {
 
     let finalCopyText = subscription_key;
 
-    if (subscription_key && (subscription_key.startsWith('vless://') || subscription_key.startsWith('vmess://'))) {
+    // Автоматическая генерация VLESS-ссылки из UUID, если включена через ENV
+    if (subscription_key && !subscription_key.startsWith('vless://') && !subscription_key.startsWith('vmess://')) {
+      const serverIp = process.env.VLESS_SERVER_IP;
+      const port = process.env.VLESS_PORT || '443';
+      const pbk = process.env.VLESS_PBK;
+      const sni = process.env.VLESS_SNI || 'yahoo.com';
+      const sid = process.env.VLESS_SID || '';
+      const fp = process.env.VLESS_FP || 'chrome';
+      const type = process.env.VLESS_TYPE || 'tcp';
+      const flow = process.env.VLESS_FLOW || 'xtls-rprx-vision';
+
+      if (serverIp && pbk) {
+        const baseUrl = `vless://${subscription_key}@${serverIp}:${port}?type=${type}&security=reality&pbk=${pbk}&sni=${sni}&fp=${fp}&sid=${sid}&spx=%2F&flow=${flow}`;
+        finalCopyText = regions.map(region => `${baseUrl}#${encodeURIComponent(region)}`).join('\n');
+      } else {
+        // Если переменные не заданы в Vercel, но мы пытаемся вернуть ссылку
+        console.warn('VLESS env variables not set. Cannot auto-generate VLESS link from UUID.');
+      }
+    } else if (subscription_key && (subscription_key.startsWith('vless://') || subscription_key.startsWith('vmess://'))) {
       const baseUrl = subscription_key.split('#')[0];
       finalCopyText = regions.map(region => `${baseUrl}#${encodeURIComponent(region)}`).join('\n');
     }
