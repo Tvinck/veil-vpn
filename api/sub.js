@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
   try {
     const { data: subscription, error } = await supabase
-      .from('subscriptions')
+      .from('vpn_subscriptions')
       .select('traffic_used, traffic_limit, expires_at, subscription_key')
       .eq('token', token)
       .single();
