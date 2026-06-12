@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"vite\" \"node tg-bot/bot.js\" \"node tg-bot/sync.js\"",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "start": "concurrently \"vite preview --host\" \"node tg-bot/bot.js\" \"node tg-bot/sync.js\""
   },
