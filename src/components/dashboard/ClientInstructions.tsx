@@ -6,17 +6,7 @@ interface Props {
   subscription: Subscription
 }
 
-const regions = [
-  '🇳🇱 Нидерланды (Premium)',
-  '🇩🇪 Германия (Premium)',
-  '🇫🇮 Финляндия (Premium)',
-  '🇷🇺 Россия (Premium)',
-  '🇮🇳 Индия (Premium)',
-  '🇱🇹 Литва (Premium)',
-  '🇬🇧 Великобритания (Premium)',
-  '🇺🇸 США (Premium)',
-  '🇯🇵 Япония (Premium)'
-];
+
 
 export const ClientInstructions = ({ subscription }: Props) => {
   const [selectedOS, setSelectedOS] = useState<OS>('iOS')
@@ -26,16 +16,8 @@ export const ClientInstructions = ({ subscription }: Props) => {
 
   const handleCopyKey = () => {
     if (!subscription) return
-    const keyUrl = subscription.subscription_key || subscription.token
-
-    let finalCopyText = keyUrl;
-
-    if (keyUrl && (keyUrl.startsWith('vless://') || keyUrl.startsWith('vmess://'))) {
-      const baseUrl = keyUrl.split('#')[0];
-      finalCopyText = regions.map(region => `${baseUrl}#${encodeURIComponent(region)}`).join('\n');
-    }
-
-    navigator.clipboard.writeText(finalCopyText)
+    const subUrl = `https://veil-vpn-eta.vercel.app/api/sub?token=${subscription.token}`
+    navigator.clipboard.writeText(subUrl)
     setCopiedKey(true)
     setTimeout(() => setCopiedKey(false), 2000)
   }
@@ -45,7 +27,7 @@ export const ClientInstructions = ({ subscription }: Props) => {
       handleCopyKey()
     } else if (action === 'add_sub') {
       handleCopyKey()
-      alert('Ключи (9 регионов) скопированы! Откройте ваше VPN-приложение и вставьте их из буфера обмена (Import from Clipboard).')
+      alert('Ссылка скопирована! Откройте ваше VPN-приложение и выберите Добавить из буфера обмена (Import from Clipboard) или Импорт по URL.')
     } else if (action === 'open_link' && link) {
       if (link !== '#') {
         window.open(link, '_blank', 'noopener,noreferrer')
@@ -166,9 +148,9 @@ export const ClientInstructions = ({ subscription }: Props) => {
           });
           
           const getCopyStep = () => ({
-            id: '2', iconType: 'copy', title: '2. Скопируйте ключи серверов', 
-            desc: 'Нажмите кнопку ниже, чтобы скопировать 9 региональных серверов в буфер обмена.', 
-            buttons: [{ label: 'Скопировать сервера', iconType: 'copy', action: 'copy_key', primary: true }]
+            id: '2', iconType: 'copy', title: '2. Скопируйте ссылку на подписку', 
+            desc: 'Нажмите кнопку ниже, чтобы скопировать вашу персональную ссылку. По ней загрузятся все сервера и счетчик трафика.', 
+            buttons: [{ label: 'Скопировать ссылку', iconType: 'copy', action: 'copy_key', primary: true }]
           });
 
           const getImportStep = (importInstruction: string) => ({
