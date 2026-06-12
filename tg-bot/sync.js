@@ -2,7 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { Client } from 'ssh2';
+import axios from 'axios';
+import https from 'https';
 
 // Загрузка переменных окружения
 const __filename = fileURLToPath(import.meta.url);
@@ -11,94 +12,131 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY;
-const SSH_HOST = process.env.SSH_HOST;
-const SSH_USER = process.env.SSH_USER;
-const SSH_PASS = process.env.SSH_PASS;
+const XUI_URL = process.env.XUI_URL;
+const XUI_USERNAME = process.env.XUI_USERNAME;
+const XUI_PASSWORD = process.env.XUI_PASSWORD;
 
-if (!SUPABASE_URL || !SUPABASE_KEY || !SSH_HOST || !SSH_USER || !SSH_PASS) {
+if (!SUPABASE_URL || !SUPABASE_KEY || !XUI_URL || !XUI_USERNAME || !XUI_PASSWORD) {
   console.error("❌ Отсутствуют необходимые переменные окружения для sync.js");
   process.exit(1);
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Игнорируем самоподписанные сертификаты для X-UI
+const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+const api = axios.create({ baseURL: XUI_URL, httpsAgent });
+
 /**
- * Выполнение команды по SSH и возврат результата
+ * Авторизация в X-UI
  */
-function execSSH(cmd) {
-  return new Promise((resolve, reject) => {
-    const conn = new Client();
-    conn.on('ready', () => {
-      conn.exec(cmd, (err, stream) => {
-        if (err) {
-          conn.end();
-          return reject(err);
-        }
-        let data = '';
-        stream.on('close', (code, signal) => {
-          conn.end();
-          if (code !== 0) return reject(new Error(`Exit code ${code}`));
-          resolve(data.trim());
-        }).on('data', (chunk) => {
-          data += chunk;
-        }).stderr.on('data', (data) => {
-          // ignore stderr
-        });
-      });
-    }).on('error', (err) => {
-      reject(err);
-    }).connect({
-      host: SSH_HOST,
-      port: 22,
-      username: SSH_USER,
-      password: SSH_PASS,
-      readyTimeout: 10000
-    });
-  });
+async function loginXUI() {
+  try {
+    const res = await api.post('/login', { username: XUI_USERNAME, password: XUI_PASSWORD });
+    const cookie = res.headers['set-cookie'] ? res.headers['set-cookie'][0] : '';
+    api.defaults.headers.common['Cookie'] = cookie;
+    return true;
+  } catch (err) {
+    console.error("❌ Ошибка авторизации в X-UI:", err.message);
+    return false;
+  }
 }
 
 /**
- * Получение списка клиентов и их трафика из БД 3X-UI через SSH
+ * Получение всех Inbounds и клиентов из X-UI
  */
-async function getXuiTrafficsSSH() {
+async function getXUIInbounds() {
   try {
-    const script = `sqlite3 -json /etc/x-ui/x-ui.db "SELECT email, up, down FROM client_traffics;"`;
-    const result = await execSSH(script);
-    
-    if (!result) return new Map();
-    
-    const rows = JSON.parse(result);
-    const clientMap = new Map();
-    
-    for (const row of rows) {
-      if (row.email) {
-        const totalTrafficBytes = (row.up || 0) + (row.down || 0);
-        clientMap.set(row.email, totalTrafficBytes);
-      }
+    const res = await api.get('/panel/api/inbounds/list');
+    if (res.data && res.data.success) {
+      return res.data.obj;
     }
-    return clientMap;
+    return [];
   } catch (err) {
-    console.error("❌ Ошибка запроса БД 3x-ui через SSH:", err.message);
+    console.error("❌ Ошибка получения Inbounds из X-UI:", err.message);
     return null;
   }
 }
 
 /**
- * Синхронизация трафика с БД Supabase
+ * Добавление нового клиента в X-UI
+ */
+async function addClientToXUI(inboundId, sub) {
+  try {
+    const client = {
+      id: sub.subscription_key,
+      flow: "xtls-rprx-vision",
+      email: sub.token,
+      limitIp: 3,
+      totalGB: 536870912000, // 500GB in bytes
+      expiryTime: new Date(sub.expires_at).getTime(),
+      enable: true,
+      tgId: "",
+      subId: sub.token
+    };
+    
+    const settings = {
+      clients: [client]
+    };
+    
+    const res = await api.post('/panel/api/inbounds/addClient', {
+      id: inboundId,
+      settings: JSON.stringify(settings)
+    });
+    
+    if (res.data && res.data.success) {
+      console.log(`✅ Добавлен клиент в X-UI: ${sub.token}`);
+      return true;
+    } else {
+      console.error(`❌ Ошибка добавления клиента ${sub.token}:`, res.data.msg);
+      return false;
+    }
+  } catch (err) {
+    console.error("❌ Ошибка запроса добавления клиента:", err.message);
+    return false;
+  }
+}
+
+/**
+ * Синхронизация трафика и пользователей
  */
 async function syncTraffic() {
-  console.log("🔄 Запуск синхронизации трафика...");
+  console.log("🔄 Запуск синхронизации...");
 
-  const clientTraffics = await getXuiTrafficsSSH();
-  if (!clientTraffics) {
-    console.log("⚠️ Не удалось получить трафик, пропуск итерации.");
+  const isLoggedIn = await loginXUI();
+  if (!isLoggedIn) return;
+
+  const inbounds = await getXUIInbounds();
+  if (!inbounds || inbounds.length === 0) {
+    console.log("⚠️ Inbounds не найдены.");
     return;
   }
 
-  // Получаем все активные подписки из Supabase
+  // Берем первый попавшийся VLESS inbound для добавления клиентов
+  const vlessInbound = inbounds.find(i => i.protocol === 'vless');
+  if (!vlessInbound) {
+    console.error("❌ Не найден VLESS inbound в X-UI");
+    return;
+  }
+
+  const xuiClientMap = new Map();
+  if (vlessInbound.clientStats) {
+     for (const stat of vlessInbound.clientStats) {
+        xuiClientMap.set(stat.email, {
+           traffic: stat.up + stat.down,
+           enable: stat.enable
+        });
+     }
+  } else {
+     const settings = JSON.parse(vlessInbound.settings);
+     for (const c of settings.clients) {
+         xuiClientMap.set(c.email, { traffic: 0, enable: c.enable });
+     }
+  }
+
   const { data: subs, error } = await supabase
     .from('subscriptions')
-    .select('id, subscription_key, token, traffic_used');
+    .select('id, subscription_key, token, traffic_used, status, expires_at');
 
   if (error) {
     console.error("❌ Ошибка получения подписок из Supabase:", error.message);
@@ -106,30 +144,32 @@ async function syncTraffic() {
   }
 
   let updatedCount = 0;
+  let addedCount = 0;
 
   for (const sub of subs) {
-    let trafficUsed = clientTraffics.get(sub.token);
-    if (trafficUsed === undefined) {
-      trafficUsed = clientTraffics.get(sub.subscription_key);
-    }
-    
-    if (trafficUsed !== undefined && trafficUsed !== sub.traffic_used) {
-      const { error: updateErr } = await supabase
-        .from('subscriptions')
-        .update({ traffic_used: trafficUsed })
-        .eq('id', sub.id);
-        
-      if (!updateErr) {
-        updatedCount++;
+    const xuiClient = xuiClientMap.get(sub.token);
+
+    if (!xuiClient) {
+      // Клиента нет в X-UI -> создаем его
+      if (sub.status === 'active') {
+         await addClientToXUI(vlessInbound.id, sub);
+         addedCount++;
+      }
+    } else {
+      // Обновляем трафик
+      if (xuiClient.traffic !== undefined && xuiClient.traffic !== sub.traffic_used) {
+        const { error: updateErr } = await supabase
+          .from('subscriptions')
+          .update({ traffic_used: xuiClient.traffic })
+          .eq('id', sub.id);
+          
+        if (!updateErr) updatedCount++;
       }
     }
   }
 
-  console.log(`✅ Синхронизация завершена. Обновлено подписок: ${updatedCount}`);
+  console.log(`✅ Итерация завершена. Синхронизировано трафика: ${updatedCount}. Добавлено новых клиентов: ${addedCount}`);
 }
 
-// Запуск при старте скрипта
 syncTraffic();
-
-// Периодический запуск каждые 5 минут
 setInterval(syncTraffic, 5 * 60 * 1000);
