@@ -18,7 +18,7 @@ export default function App() {
           <Route path="/checkout" element={<Checkout />} />
           
           {/* Client Dashboard with individual URL token */}
-          <Route path="/:token" element={<Dashboard />} />
+          <Route path="/cabinet/:token" element={<Dashboard />} />
           
           {/* Fallback route */}
           <Route path="*" element={<Navigate to="/" replace />} />

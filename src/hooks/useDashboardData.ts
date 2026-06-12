@@ -24,7 +24,7 @@ export function useDashboardData(token: string | undefined) {
 
       // 1. Извлечение подписки по токену
       const { data: sub, error: subErr } = await supabase
-        .from('subscriptions')
+        .from('vpn_subscriptions')
         .select('*')
         .eq('token', token)
         .single()
@@ -37,54 +37,31 @@ export function useDashboardData(token: string | undefined) {
 
       setSubscription(sub as Subscription)
 
-      // 1.5 Извлечение ВСЕХ подписок этого пользователя
+      // 1.5 Извлечение ВСЕХ подписок этого пользователя (fallback by username if user_id doesn't exist)
       const { data: allSubs } = await supabase
-        .from('subscriptions')
+        .from('vpn_subscriptions')
         .select('*')
-        .eq('user_id', sub.user_id)
+        .eq('username', sub.username)
         .order('created_at', { ascending: true })
 
       if (allSubs) {
         setAllSubscriptions(allSubs as Subscription[])
       }
 
-      // 2. Извлечение связанного профиля пользователя
-      const { data: prof, error: profErr } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', sub.user_id)
-        .single()
-
-      if (profErr || !prof) {
-        setErrorMsg('Профиль пользователя не существует в базе данных.')
-        setLoading(false)
-        return
+      // 2. Создаем псевдо-профиль из данных подписки
+      const prof: Profile = {
+        id: sub.id,
+        username: sub.username,
+        telegram_username: sub.telegram_username || '',
+        avatar_color: '#E63950', // Fallback color
+        tg_bot_linked: false, // Not currently tracked in new schema
+        tg_channel_subscribed: false // Not currently tracked in new schema
       }
 
-      setProfile(prof as Profile)
+      setProfile(prof)
 
-      // 3. Fetch Referrals where user is referrer_id
-      const { data: refs, error: refsErr } = await supabase
-        .from('referrals')
-        .select(`
-          status,
-          bonus_days,
-          referred:profiles!referred_id (
-            username
-          )
-        `)
-        .eq('referrer_id', sub.user_id)
-
-      if (!refsErr && refs) {
-        const formattedFriends: Friend[] = refs.map((r: any) => ({
-          name: r.referred?.username || 'Анонимный друг',
-          status: r.status as 'active' | 'pending',
-          bonus: r.status === 'active' ? `+${r.bonus_days} дней бесплатного VPN` : 'Ожидает покупки'
-        }))
-        setFriends(formattedFriends)
-      } else {
-        setFriends([])
-      }
+      // 3. Реферальная система временно отключена в новой БД
+      setFriends([])
     } catch (err) {
       console.error('Ошибка загрузки данных:', err)
       setErrorMsg('Произошла непредвиденная ошибка при синхронизации с базой данных.')
