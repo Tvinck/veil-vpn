@@ -10,6 +10,64 @@ import { Pricing } from './landing/Pricing'
 import { Reviews } from './landing/Reviews'
 import { TiltCard } from './ui/TiltCard'
 
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.1
+    }
+  }
+}
+
+const fadeUpVariants = {
+  hidden: { opacity: 0, y: 25 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: 'spring' as const,
+      stiffness: 90,
+      damping: 14
+    }
+  }
+}
+
+const scaleInVariants = {
+  hidden: { opacity: 0, scale: 0.88 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      type: 'spring' as const,
+      stiffness: 100,
+      damping: 13
+    }
+  }
+}
+
+const listContainer = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.08
+    }
+  }
+}
+
+const listItem = {
+  hidden: { opacity: 0, x: -16 },
+  visible: { 
+    opacity: 1, 
+    x: 0,
+    transition: {
+      type: 'spring' as const,
+      stiffness: 90,
+      damping: 14
+    }
+  }
+}
+
 export default function LandingPage() {
   const navigate = useNavigate()
   const [isLoginOpen, setIsLoginOpen] = useState(false)
@@ -104,39 +162,71 @@ export default function LandingPage() {
 
         {/* Hero Left Content */}
         <motion.div 
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8 }}
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
           className="hero-content"
         >
-          <Badge text="Проект от BAZZAR GROUP" />
+          <motion.div variants={scaleInVariants}>
+            <Badge text="Проект от BAZZAR GROUP" />
+          </motion.div>
 
-          <h1 className="hero-title" style={{ fontSize: 'clamp(2.2rem, 4.2vw, 3.8rem)', fontWeight: 950, lineHeight: 1.08, letterSpacing: '-1.5px', marginTop: '14px' }}>
+          <motion.h1 
+            variants={fadeUpVariants}
+            className="hero-title" 
+            style={{ fontSize: 'clamp(2.2rem, 4.2vw, 3.8rem)', fontWeight: 950, lineHeight: 1.08, letterSpacing: '-1.5px', marginTop: '14px' }}
+          >
             Настройка сетевого<br />
             подключения для<br />
             <span style={{ color: red, textShadow: '0 0 32px rgba(230,57,80,0.45)' }}>работы в РФ</span>
-          </h1>
+          </motion.h1>
 
-          <p className="hero-subtitle" style={{ fontSize: '1.05rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, maxWidth: '520px', marginBottom: '32px' }}>
+          <motion.p 
+            variants={fadeUpVariants}
+            className="hero-subtitle" 
+            style={{ fontSize: '1.05rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, maxWidth: '520px', marginBottom: '32px' }}
+          >
             Цифровые IT-услуги по подключению персонального защищённого сетевого профиля для ваших личных устройств ⚡️
-          </p>
+          </motion.p>
 
           {/* Action Row */}
-          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', width: '100%', marginBottom: '40px' }}>
-            <button className="btn-cyan" onClick={() => navigate('/checkout')}>
+          <motion.div 
+            variants={fadeUpVariants}
+            style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', width: '100%', marginBottom: '40px' }}
+          >
+            <motion.button 
+              whileHover={{ scale: 1.04, boxShadow: '0 0 25px rgba(0, 240, 255, 0.4)' }}
+              whileTap={{ scale: 0.96 }}
+              className="btn-cyan" 
+              onClick={() => navigate('/checkout')}
+            >
               Оформить подключение <ArrowRight size={15} />
-            </button>
-            <button className="btn-ghost" onClick={() => setIsLoginOpen(true)}>
+            </motion.button>
+            <motion.button 
+              whileHover={{ scale: 1.04, background: 'rgba(255,255,255,0.08)' }}
+              whileTap={{ scale: 0.96 }}
+              className="btn-ghost" 
+              onClick={() => setIsLoginOpen(true)}
+            >
               Войти по ключу <Key size={15} />
-            </button>
-          </div>
+            </motion.button>
+          </motion.div>
 
           {/* Quick specs badge list */}
-          <div className="devices-grid">
-            <div className="device-item"><Smartphone size={14} className="text-cyan" /> 3 Устройства</div>
-            <div className="device-item"><Zap size={14} className="text-cyan" /> Без лимитов</div>
-            <div className="device-item"><ShieldCheck size={14} className="text-cyan" /> Маскировка трафика</div>
-          </div>
+          <motion.div 
+            variants={containerVariants}
+            className="devices-grid"
+          >
+            <motion.div variants={scaleInVariants} whileHover={{ y: -2, scale: 1.05 }} className="device-item">
+              <Smartphone size={14} className="text-cyan" /> 3 Устройства
+            </motion.div>
+            <motion.div variants={scaleInVariants} whileHover={{ y: -2, scale: 1.05 }} className="device-item">
+              <Zap size={14} className="text-cyan" /> Без лимитов
+            </motion.div>
+            <motion.div variants={scaleInVariants} whileHover={{ y: -2, scale: 1.05 }} className="device-item">
+              <ShieldCheck size={14} className="text-cyan" /> Маскировка трафика
+            </motion.div>
+          </motion.div>
         </motion.div>
 
         {/* Hero Right Visual */}
@@ -167,74 +257,142 @@ export default function LandingPage() {
         <div style={{ position: 'absolute', top: '10%', right: '-10%', width: '500px', height: '500px',
           background: 'radial-gradient(circle, rgba(230,57,80,0.08) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
-        <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8 }}
+          style={{ textAlign: 'center', marginBottom: '64px' }}
+        >
           <Badge text="Инновационные технологии" />
           <h2 style={{ marginTop: '18px', fontSize: 'clamp(1.8rem, 3.5vw, 2.8rem)', fontWeight: 900, fontFamily: 'var(--font-title)', lineHeight: 1.15 }}>
             Профессиональное решение<br />
             <span style={{ color: 'rgba(255,255,255,0.4)' }}>для стабильной работы интернета</span>
           </h2>
-        </div>
+        </motion.div>
 
         <div className="sec-features-grid mobile-grid-1">
           {/* Card 1: Features List */}
-          <TiltCard className="h-full">
-            <div className="sec-feature-card sec-feature-card-red h-full" style={{ padding: '35px 30px' }}>
-              <div className="sec-feat-icon" style={{ background: 'rgba(230,57,80,0.12)', border: '1px solid rgba(230,57,80,0.25)', marginBottom: '24px' }}>
-                <ShieldCheck size={24} color={red} strokeWidth={2.5} />
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.7, delay: 0.0 }}
+            className="h-full"
+          >
+            <TiltCard className="h-full">
+              <div className="sec-feature-card sec-feature-card-red h-full" style={{ padding: '35px 30px' }}>
+                <div className="sec-feat-icon" style={{ background: 'rgba(230,57,80,0.12)', border: '1px solid rgba(230,57,80,0.25)', marginBottom: '24px' }}>
+                  <ShieldCheck size={24} color={red} strokeWidth={2.5} />
+                </div>
+                <h3 className="sec-feat-title" style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '20px' }}>Преимущества профиля</h3>
+                <motion.ul 
+                  variants={listContainer}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '14px', listStyle: 'none' }}
+                >
+                  <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
+                    <span style={{ color: red }}>✓</span> Автоматическая выдача ключа (ссылки) сразу после оплаты.
+                  </motion.li>
+                  <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
+                    <span style={{ color: red }}>✓</span> Доступ ко всем ресурсам при максимально простой настройке.
+                  </motion.li>
+                  <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
+                    <span style={{ color: red }}>✓</span> Самая доступная стоимость сетевого профиля на рынке.
+                  </motion.li>
+                  <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
+                    <span style={{ color: red }}>✓</span> Доступ к множеству зашифрованных сетевых направлений.
+                  </motion.li>
+                </motion.ul>
               </div>
-              <h3 className="sec-feat-title" style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '20px' }}>Преимущества профиля</h3>
-              <ul style={{ display: 'flex', flexDirection: 'column', gap: '14px', listStyle: 'none' }}>
-                <li style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-                  <span style={{ color: red }}>✓</span> Автоматическая выдача ключа (ссылки) сразу после оплаты.
-                </li>
-                <li style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-                  <span style={{ color: red }}>✓</span> Доступ ко всем ресурсам при максимально простой настройке.
-                </li>
-                <li style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-                  <span style={{ color: red }}>✓</span> Самая доступная стоимость сетевого профиля на рынке.
-                </li>
-                <li style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-                  <span style={{ color: red }}>✓</span> Доступ к множеству зашифрованных сетевых направлений.
-                </li>
-              </ul>
-            </div>
-          </TiltCard>
+            </TiltCard>
+          </motion.div>
 
           {/* Card 2: Wireframe / Visual */}
-          <TiltCard className="h-full">
-            <div className="sec-feature-card sec-feature-card-glow h-full relative overflow-hidden" style={{ minHeight: '340px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 50%, rgba(230,57,80,0.2) 0%, transparent 70%)' }} />
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: red, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 28px rgba(230,57,80,0.65)', marginBottom: '16px', position: 'relative', zIndex: 2 }}>
-                <Cpu size={28} color="#fff" />
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.7, delay: 0.15 }}
+            className="h-full"
+          >
+            <TiltCard className="h-full">
+              <div className="sec-feature-card sec-feature-card-glow h-full relative overflow-hidden" style={{ minHeight: '340px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <motion.div 
+                  animate={{ 
+                    scale: [1, 1.2, 1],
+                    opacity: [0.15, 0.35, 0.15]
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                  style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 50%, rgba(230,57,80,0.25) 0%, transparent 60%)' }} 
+                />
+                <motion.div 
+                  animate={{ 
+                    y: [0, -6, 0],
+                    boxShadow: [
+                      '0 0 20px rgba(230,57,80,0.4)',
+                      '0 0 35px rgba(230,57,80,0.75)',
+                      '0 0 20px rgba(230,57,80,0.4)'
+                    ]
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                  style={{ width: '64px', height: '64px', borderRadius: '50%', background: red, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', position: 'relative', zIndex: 2 }}
+                >
+                  <Cpu size={28} color="#fff" />
+                </motion.div>
+                <span style={{ fontSize: '1.1rem', fontWeight: 800, textTransform: 'uppercase', fontFamily: 'var(--font-cyber)', color: '#fff', position: 'relative', zIndex: 2, letterSpacing: '1px' }}>VLESS Reality</span>
+                <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', marginTop: '6px', position: 'relative', zIndex: 2 }}>Протокол последнего поколения</span>
               </div>
-              <span style={{ fontSize: '1.1rem', fontWeight: 800, textTransform: 'uppercase', fontFamily: 'var(--font-cyber)', color: '#fff', position: 'relative', zIndex: 2, letterSpacing: '1px' }}>VLESS Reality</span>
-              <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', marginTop: '6px', position: 'relative', zIndex: 2 }}>Протокол последнего поколения</span>
-            </div>
-          </TiltCard>
+            </TiltCard>
+          </motion.div>
 
           {/* Card 3: Limitations & Instructions */}
-          <TiltCard className="h-full">
-            <div className="sec-feature-card sec-feature-card-dark h-full" style={{ padding: '35px 30px' }}>
-              <div className="sec-feat-icon" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '24px' }}>
-                <Lock size={22} color="rgba(255,255,255,0.8)" strokeWidth={2} />
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.7, delay: 0.3 }}
+            className="h-full"
+          >
+            <TiltCard className="h-full">
+              <div className="sec-feature-card sec-feature-card-dark h-full" style={{ padding: '35px 30px' }}>
+                <div className="sec-feat-icon" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '24px' }}>
+                  <Lock size={22} color="rgba(255,255,255,0.8)" strokeWidth={2} />
+                </div>
+                <h3 className="sec-feat-title" style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '20px' }}>Условия и лимиты</h3>
+                <motion.ul 
+                  variants={listContainer}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '14px', listStyle: 'none' }}
+                >
+                  <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.45 }}>
+                    <span style={{ color: red }}>✳</span> Один профиль рассчитан на <strong>3 устройства</strong> одновременно.
+                  </motion.li>
+                  <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.45 }}>
+                    <span style={{ color: red }}>✳</span> Полное отсутствие лимитов на объем проходящего трафика.
+                  </motion.li>
+                  <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.45 }}>
+                    <span style={{ color: red }}>✳</span> Подробная пошаговая инструкция предоставляется сразу после совершения покупки.
+                  </motion.li>
+                  <motion.li variants={listItem} style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.4, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', marginTop: '6px' }}>
+                    * Фактическая скорость зависит от конфигурации устройства, типа сети клиента, оператора связи и текущей нагрузки.
+                  </motion.li>
+                </motion.ul>
               </div>
-              <h3 className="sec-feat-title" style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '20px' }}>Условия и лимиты</h3>
-              <ul style={{ display: 'flex', flexDirection: 'column', gap: '14px', listStyle: 'none' }}>
-                <li style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.45 }}>
-                  <span style={{ color: red }}>✳</span> Один профиль рассчитан на <strong>3 устройства</strong> одновременно.
-                </li>
-                <li style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.45 }}>
-                  <span style={{ color: red }}>✳</span> Полное отсутствие лимитов на объем проходящего трафика.
-                </li>
-                <li style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.45 }}>
-                  <span style={{ color: red }}>✳</span> Подробная пошаговая инструкция предоставляется сразу после совершения покупки.
-                </li>
-                <li style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.4, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', marginTop: '6px' }}>
-                  * Фактическая скорость зависит от конфигурации устройства, типа сети клиента, оператора связи и текущей нагрузки.
-                </li>
-              </ul>
-            </div>
-          </TiltCard>
+            </TiltCard>
+          </motion.div>
         </div>
       </section>
 
