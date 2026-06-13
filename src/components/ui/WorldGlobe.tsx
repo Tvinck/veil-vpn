@@ -1,119 +1,590 @@
+import { useEffect, useRef, useState } from 'react'
 
+interface Pin {
+  lat: number
+  lon: number
+  name: string
+  x: number
+  y: number
+  z: number
+}
 
 export const WorldGlobe = () => {
-  // Переведенные названия локаций
-  const pins = [
-    { x: 380, y: 160, name: 'США',       left: true  },
-    { x: 440, y: 120, name: 'Великобритания', left: false },
-    { x: 480, y: 150, name: 'Германия',  left: false },
-    { x: 430, y: 190, name: 'Испания',   left: true  },
-    { x: 530, y: 140, name: 'Швеция',    left: false },
-    { x: 510, y: 180, name: 'Польша',    left: false },
-    { x: 540, y: 220, name: 'Турция',    left: false },
-    { x: 610, y: 160, name: 'Россия',    left: false },
-    { x: 250, y: 220, name: 'Бразилия',  left: true  },
-    { x: 680, y: 260, name: 'Япония',    left: false },
-  ]
+  const containerRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [projectedPins, setProjectedPins] = useState<any[]>([])
 
-  const CX = 440, CY = 280, R = 240
+  // Shared rotation refs so event handlers can update them and canvas render loop reads them smoothly
+  const rotationRef = useRef({ x: 0.25, y: 0 })
+  const dragRef = useRef({
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    velocityX: 0,
+    velocityY: 0,
+    lastX: 0,
+    lastY: 0
+  })
 
-  // Генерация точек для круглой сферы
-  const allDots: { x: number; y: number }[] = []
-  for (let row = 0; row <= 26; row++) {
-    const y = CY - R + (row / 26) * R * 2
-    const ratio = Math.sqrt(Math.max(0, 1 - ((y - CY) / R) ** 2))
-    const w = R * ratio
-    const numDots = Math.round(50 * ratio)
-    for (let col = 0; col <= numDots; col++) {
-      const x = CX - w + (col / Math.max(numDots, 1)) * w * 2
-      allDots.push({ x, y })
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const width = 500
+    const height = 500
+    canvas.width = width * window.devicePixelRatio
+    canvas.height = height * window.devicePixelRatio
+    canvas.style.width = `${width}px`
+    canvas.style.height = `${height}px`
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
+
+    // Generate points on sphere using Fibonacci distribution
+    const dots: { x: number; y: number; z: number }[] = []
+    const dotCount = 450
+    for (let i = 0; i < dotCount; i++) {
+      const phi = Math.acos(-1 + (2 * i) / dotCount)
+      const theta = Math.sqrt(dotCount * Math.PI) * phi
+      dots.push({
+        x: Math.cos(theta) * Math.sin(phi),
+        y: Math.sin(theta) * Math.sin(phi),
+        z: Math.cos(phi)
+      })
     }
+
+    // Coordinates of location pins on a unit sphere (lat, lon converted to Cartesian)
+    const rawPins: Pin[] = [
+      { lat: 0.65, lon: -1.66, name: 'США' },
+      { lat: 0.96, lon: -0.05, name: 'Великобритания' },
+      { lat: 0.89, lon: 0.16, name: 'Германия' },
+      { lat: 0.70, lon: -0.05, name: 'Испания' },
+      { lat: 1.05, lon: 0.26, name: 'Швеция' },
+      { lat: 0.91, lon: 0.35, name: 'Польша' },
+      { lat: 0.68, lon: 0.61, name: 'Турция' },
+      { lat: 0.96, lon: 0.65, name: 'Россия' },
+      { lat: -0.24, lon: -0.89, name: 'Бразилия' },
+      { lat: 0.63, lon: 2.41, name: 'Япония' }
+    ].map(p => {
+      const x = Math.cos(p.lat) * Math.sin(p.lon)
+      const y = -Math.sin(p.lat)
+      const z = Math.cos(p.lat) * Math.cos(p.lon)
+      return { name: p.name, x, y, z, lat: p.lat, lon: p.lon }
+    })
+
+    // Russia node for connection arches
+    const russiaPin = rawPins.find(p => p.name === 'Россия')!
+    const targetPins = rawPins.filter(p => p.name !== 'Россия' && p.name !== 'Бразилия' && p.name !== 'Япония')
+
+    // Generate latitude & longitude grid rings
+    // 5 latitude rings at constant z
+    const gridLatitudeZ = [-0.6, -0.3, 0, 0.3, 0.6]
+    const gridLongitudeAngles = [0, Math.PI / 3, (2 * Math.PI) / 3, Math.PI, (4 * Math.PI) / 3, (5 * Math.PI) / 3]
+
+    // Precalculate points for latitude rings
+    const latitudeRings: { x: number; y: number; z: number }[][] = gridLatitudeZ.map(zVal => {
+      const r = Math.sqrt(1 - zVal * zVal)
+      const ringPoints: { x: number; y: number; z: number }[] = []
+      const steps = 60
+      for (let i = 0; i <= steps; i++) {
+        const theta = (i / steps) * Math.PI * 2
+        ringPoints.push({
+          x: r * Math.cos(theta),
+          y: r * Math.sin(theta),
+          z: zVal
+        })
+      }
+      return ringPoints
+    })
+
+    // Precalculate points for longitude rings
+    const longitudeRings: { x: number; y: number; z: number }[][] = gridLongitudeAngles.map(ang => {
+      const ringPoints: { x: number; y: number; z: number }[] = []
+      const steps = 60
+      for (let i = 0; i <= steps; i++) {
+        const phi = (i / steps) * Math.PI * 2
+        ringPoints.push({
+          x: Math.sin(phi) * Math.sin(ang),
+          y: Math.cos(phi),
+          z: Math.sin(phi) * Math.cos(ang)
+        })
+      }
+      return ringPoints
+    })
+
+    let pulseTime = 0
+    let reqId: number
+
+    const render = () => {
+      ctx.clearRect(0, 0, width, height)
+
+      // Apply drag velocities & friction
+      const drag = dragRef.current
+      const rotation = rotationRef.current
+
+      if (drag.isDragging) {
+        drag.velocityX = 0
+        drag.velocityY = 0
+      } else {
+        // Friction / Damping
+        drag.velocityX *= 0.95
+        drag.velocityY *= 0.95
+
+        // Add auto-rotation drag friction and natural slow spin
+        rotation.y += drag.velocityX + 0.0018
+        rotation.x += drag.velocityY
+        // Keep pitch X rotation within logical bounds (-65deg to 65deg)
+        rotation.x = Math.max(-1.1, Math.min(1.1, rotation.x))
+      }
+
+      const rotY = rotation.y
+      const rotX = rotation.x
+
+      const cosY = Math.cos(rotY), sinY = Math.sin(rotY)
+      const cosX = Math.cos(rotX), sinX = Math.sin(rotX)
+
+      const radius = 175
+      const perspective = 500
+
+      // Helper function to rotate 3D point
+      const rotatePoint = (pt: { x: number; y: number; z: number }) => {
+        // Y rotation
+        const x1 = pt.x * cosY - pt.z * sinY
+        const z1 = pt.z * cosY + pt.x * sinY
+        // X rotation
+        const y2 = pt.y * cosX - z1 * sinX
+        const z2 = z1 * cosX + pt.y * sinX
+        return { x: x1, y: y2, z: z2 }
+      }
+
+      // Helper function to project rotated 3D point
+      const projectPoint = (rotated: { x: number; y: number; z: number }) => {
+        const scale = perspective / (perspective + rotated.z)
+        const x = rotated.x * scale * radius + width / 2
+        const y = rotated.y * scale * radius + height / 2
+        return { x, y, scale }
+      }
+
+      // ─── 1. SHADED OUTER ATMOSPHERE GLOW ───
+      // We draw a gorgeous outer neon halo
+      const outerGlow = ctx.createRadialGradient(width / 2, height / 2, radius * 0.9, width / 2, height / 2, radius * 1.25)
+      outerGlow.addColorStop(0, 'rgba(230, 57, 80, 0.15)')
+      outerGlow.addColorStop(0.3, 'rgba(230, 57, 80, 0.06)')
+      outerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      ctx.fillStyle = outerGlow
+      ctx.beginPath()
+      ctx.arc(width / 2, height / 2, radius * 1.3, 0, Math.PI * 2)
+      ctx.fill()
+
+      // ─── 2. HOLOGRAPHIC 3D GRID LINES (BACK SEGMENTS FIRST) ───
+      // We divide grid lines into small segments and draw them.
+      // If a segment's rotated Z > 0, it's drawn with high transparency (back side).
+      // If rotated Z <= 0, it's drawn brighter (front side).
+      const drawGridRing = (points: { x: number; y: number; z: number }[]) => {
+        for (let i = 0; i < points.length - 1; i++) {
+          const pt1 = rotatePoint(points[i])
+          const pt2 = rotatePoint(points[i + 1])
+          const proj1 = projectPoint(pt1)
+          const proj2 = projectPoint(pt2)
+
+          const avgZ = (pt1.z + pt2.z) / 2
+          const isBack = avgZ > 0.05
+
+          ctx.beginPath()
+          ctx.moveTo(proj1.x, proj1.y)
+          ctx.lineTo(proj2.x, proj2.y)
+          ctx.lineWidth = isBack ? 0.75 : 1.25
+          ctx.strokeStyle = isBack
+            ? 'rgba(230, 57, 80, 0.03)'
+            : 'rgba(0, 240, 255, 0.08)' // Cyan front lines, red back lines
+          ctx.stroke()
+        }
+      }
+
+      latitudeRings.forEach(drawGridRing)
+      longitudeRings.forEach(drawGridRing)
+
+      // ─── 3. SPHERE FIBONACCI DOT MATRIX ───
+      // Sort and project dots
+      const rotatedDots = dots.map(d => rotatePoint(d)).sort((a, b) => b.z - a.z)
+
+      rotatedDots.forEach(d => {
+        const proj = projectPoint(d)
+        const opacityRatio = (d.z + 1.2) / 2.2 // 0 (back) to 1 (front)
+        const size = 1.0 + opacityRatio * 1.5
+
+        // Draw dots
+        ctx.fillStyle = d.z > 0
+          ? `rgba(230, 57, 80, ${0.05 + opacityRatio * 0.15})` // Dim red back dots
+          : `rgba(230, 57, 80, ${0.12 + opacityRatio * 0.55})` // Bright front dots
+        ctx.beginPath()
+        ctx.arc(proj.x, proj.y, size, 0, Math.PI * 2)
+        ctx.fill()
+      })
+
+      // ─── 4. 3D NETWORK CONNECTION ARCS ───
+      pulseTime += 0.007
+      
+      targetPins.forEach((target, idx) => {
+        const start = russiaPin
+        const end = target
+
+        // Compute curve points
+        // Midpoint of start and end vectors
+        const midX = (start.x + end.x) / 2
+        const midY = (start.y + end.y) / 2
+        const midZ = (start.z + end.z) / 2
+        const len = Math.sqrt(midX*midX + midY*midY + midZ*midZ)
+        
+        // Apex height
+        const apexHeight = 1.38
+        const apex = {
+          x: (midX / len) * apexHeight,
+          y: (midY / len) * apexHeight,
+          z: (midZ / len) * apexHeight
+        }
+
+        // Generate bezier segments
+        const steps = 30
+        const curvePoints: { x: number; y: number; z: number }[] = []
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps
+          const x = (1 - t) * (1 - t) * start.x + 2 * (1 - t) * t * apex.x + t * t * end.x
+          const y = (1 - t) * (1 - t) * start.y + 2 * (1 - t) * t * apex.y + t * t * end.y
+          const z = (1 - t) * (1 - t) * start.z + 2 * (1 - t) * t * apex.z + t * t * end.z
+          curvePoints.push({ x, y, z })
+        }
+
+        // Draw bezier arc segments with depth fading
+        for (let i = 0; i < curvePoints.length - 1; i++) {
+          const pt1 = rotatePoint(curvePoints[i])
+          const pt2 = rotatePoint(curvePoints[i + 1])
+          const proj1 = projectPoint(pt1)
+          const proj2 = projectPoint(pt2)
+
+          const avgZ = (pt1.z + pt2.z) / 2
+          
+          // Fade out segments on the backside of the sphere
+          if (avgZ <= 0.22) {
+            const depthOpacity = Math.max(0, 1 - (avgZ + 0.3) * 1.5)
+            ctx.beginPath()
+            ctx.moveTo(proj1.x, proj1.y)
+            ctx.lineTo(proj2.x, proj2.y)
+            ctx.lineWidth = 1.2
+            
+            // Neon cyan connection lines
+            ctx.strokeStyle = `rgba(0, 240, 255, ${0.35 * depthOpacity})`
+            ctx.stroke()
+          }
+        }
+
+        // Draw animated traveling photon packet
+        const tPulse = (pulseTime + idx * 0.23) % 1.0
+        // Find position along curve
+        const x = (1 - tPulse) * (1 - tPulse) * start.x + 2 * (1 - tPulse) * tPulse * apex.x + tPulse * tPulse * end.x
+        const y = (1 - tPulse) * (1 - tPulse) * start.y + 2 * (1 - tPulse) * tPulse * apex.y + tPulse * tPulse * end.y
+        const z = (1 - tPulse) * (1 - tPulse) * start.z + 2 * (1 - tPulse) * tPulse * apex.z + tPulse * tPulse * end.z
+        
+        const rotPulse = rotatePoint({ x, y, z })
+        if (rotPulse.z <= 0.18) {
+          const projPulse = projectPoint(rotPulse)
+          const pulseOpacity = Math.max(0, 1 - (rotPulse.z + 0.3) * 1.5)
+
+          ctx.shadowBlur = 8
+          ctx.shadowColor = '#00f0ff'
+          ctx.fillStyle = `rgba(255, 255, 255, ${pulseOpacity})`
+          ctx.beginPath()
+          ctx.arc(projPulse.x, projPulse.y, 3.5, 0, Math.PI * 2)
+          ctx.fill()
+          
+          ctx.fillStyle = `rgba(0, 240, 255, ${0.4 * pulseOpacity})`
+          ctx.beginPath()
+          ctx.arc(projPulse.x, projPulse.y, 8, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.shadowBlur = 0 // reset shadow
+        }
+      })
+
+      // ─── 5. 3D GLOWING LOCATION BEACONS & MARKS ───
+      const tempPins: any[] = []
+
+      rawPins.forEach(p => {
+        const rotBase = rotatePoint(p)
+        
+        // Draw coordinate spike rising vertically from the sphere surface
+        const beaconHeight = 1.15
+        const spikeEnd = {
+          x: p.x * beaconHeight,
+          y: p.y * beaconHeight,
+          z: p.z * beaconHeight
+        }
+        const rotEnd = rotatePoint(spikeEnd)
+
+        const projBase = projectPoint(rotBase)
+        const projEnd = projectPoint(rotEnd)
+
+        // Draw pin only if visible on the front sphere half
+        if (rotBase.z <= 0.22) {
+          const depthOpacity = Math.max(0, 1 - (rotBase.z + 0.3) * 1.5)
+
+          // Draw the spike line (Russia has red spike, others cyan)
+          const isRussia = p.name === 'Россия'
+          const neonColor = isRussia ? '230, 57, 80' : '0, 240, 255'
+
+          const spikeGrad = ctx.createLinearGradient(projBase.x, projBase.y, projEnd.x, projEnd.y)
+          spikeGrad.addColorStop(0, `rgba(${neonColor}, 0)`)
+          spikeGrad.addColorStop(0.7, `rgba(${neonColor}, ${0.5 * depthOpacity})`)
+          spikeGrad.addColorStop(1, `rgba(255, 255, 255, ${0.85 * depthOpacity})`)
+
+          ctx.beginPath()
+          ctx.moveTo(projBase.x, projBase.y)
+          ctx.lineTo(projEnd.x, projEnd.y)
+          ctx.lineWidth = 1.5
+          ctx.strokeStyle = spikeGrad
+          ctx.stroke()
+
+          // Draw the neon point on the sphere surface
+          ctx.shadowBlur = 10
+          ctx.shadowColor = isRussia ? '#e63950' : '#00f0ff'
+          ctx.fillStyle = '#ffffff'
+          ctx.beginPath()
+          ctx.arc(projBase.x, projBase.y, 2.5, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.shadowBlur = 0
+
+          // Draw the glowing rings at the top of the spike
+          ctx.fillStyle = `rgba(${neonColor}, ${0.45 * depthOpacity})`
+          ctx.beginPath()
+          ctx.arc(projEnd.x, projEnd.y, 5, 0, Math.PI * 2)
+          ctx.fill()
+          
+          ctx.strokeStyle = `rgba(${neonColor}, ${0.8 * depthOpacity})`
+          ctx.lineWidth = 1
+          ctx.beginPath()
+          ctx.arc(projEnd.x, projEnd.y, 2, 0, Math.PI * 2)
+          ctx.stroke()
+
+          // Save coordinates for HTML text tags overlay
+          tempPins.push({
+            name: p.name,
+            x: projEnd.x,
+            y: projEnd.y,
+            opacity: depthOpacity,
+            isRussia
+          })
+        }
+      })
+
+      // ─── 6. SPHERICAL SHADING GRADIENT OVERLAY ───
+      // Overlay dark lighting inside the circle to create actual 3D shadows on the sphere body
+      const shadowGrad = ctx.createRadialGradient(
+        width / 2 - radius * 0.2, 
+        height / 2 - radius * 0.2, 
+        radius * 0.4, 
+        width / 2, 
+        height / 2, 
+        radius
+      )
+      shadowGrad.addColorStop(0, 'rgba(3, 3, 7, 0.0)')
+      shadowGrad.addColorStop(0.65, 'rgba(3, 3, 7, 0.25)')
+      shadowGrad.addColorStop(1, 'rgba(3, 3, 7, 0.75)') // Dark shadow on sphere horizon edges
+      
+      ctx.fillStyle = shadowGrad
+      ctx.beginPath()
+      ctx.arc(width / 2, height / 2, radius, 0, Math.PI * 2)
+      ctx.fill()
+
+      setProjectedPins(tempPins)
+      reqId = requestAnimationFrame(render)
+    }
+
+    render()
+    return () => cancelAnimationFrame(reqId)
+  }, [])
+
+  // Drag interaction events
+  const handleMouseDown = (e: React.MouseEvent) => {
+    dragRef.current.isDragging = true
+    dragRef.current.startX = e.clientX
+    dragRef.current.startY = e.clientY
+    dragRef.current.lastX = e.clientX
+    dragRef.current.lastY = e.clientY
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const drag = dragRef.current
+    if (!drag.isDragging) return
+
+    const dx = e.clientX - drag.lastX
+    const dy = e.clientY - drag.lastY
+
+    rotationRef.current.y += dx * 0.0055
+    rotationRef.current.x += dy * 0.0055
+
+    drag.velocityX = dx * 0.0055
+    drag.velocityY = dy * 0.0055
+
+    drag.lastX = e.clientX
+    drag.lastY = e.clientY
+  }
+
+  const handleMouseUpOrLeave = () => {
+    dragRef.current.isDragging = false
+  }
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 0) return
+    const touch = e.touches[0]
+    dragRef.current.isDragging = true
+    dragRef.current.startX = touch.clientX
+    dragRef.current.startY = touch.clientY
+    dragRef.current.lastX = touch.clientX
+    dragRef.current.lastY = touch.clientY
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const drag = dragRef.current
+    if (!drag.isDragging || e.touches.length === 0) return
+
+    const touch = e.touches[0]
+    const dx = touch.clientX - drag.lastX
+    const dy = touch.clientY - drag.lastY
+
+    rotationRef.current.y += dx * 0.0065
+    rotationRef.current.x += dy * 0.0065
+
+    drag.velocityX = dx * 0.0065
+    drag.velocityY = dy * 0.0065
+
+    drag.lastX = touch.clientX
+    drag.lastY = touch.clientY
   }
 
   return (
-    <svg viewBox="0 0 880 560" xmlns="http://www.w3.org/2000/svg"
-      style={{ width: '100%', maxWidth: '860px', display: 'block' }}>
-      <defs>
-        <radialGradient id="gSurface" cx="42%" cy="28%" r="72%">
-          <stop offset="0%" stopColor="#270a12" />
-          <stop offset="55%" stopColor="#100406" />
-          <stop offset="100%" stopColor="#06020400" />
-        </radialGradient>
-        <radialGradient id="gBottomGlow" cx="50%" cy="95%" r="55%">
-          <stop offset="0%" stopColor="#e63950" stopOpacity="0.85" />
-          <stop offset="35%" stopColor="#e63950" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#e63950" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="gCenterGlow" cx="50%" cy="58%" r="48%">
-          <stop offset="0%" stopColor="#e63950" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#e63950" stopOpacity="0" />
-        </radialGradient>
-        <clipPath id="cpGlobe">
-          <circle cx={CX} cy={CY} r={R} />
-        </clipPath>
-        <filter id="fPinGlow" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-      </defs>
+    <div
+      ref={containerRef}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUpOrLeave}
+      onMouseLeave={handleMouseUpOrLeave}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleMouseUpOrLeave}
+      style={{
+        position: 'relative',
+        width: '500px',
+        height: '500px',
+        margin: '0 auto',
+        userSelect: 'none',
+        cursor: dragRef.current.isDragging ? 'grabbing' : 'grab'
+      }}
+    >
+      <canvas ref={canvasRef} style={{ display: 'block' }} />
 
-      {/* Globe base fill */}
-      <circle cx={CX} cy={CY} r={R} fill="url(#gSurface)" />
+      {/* Floating Glassmorphic HTML Labels */}
+      {projectedPins.map((pin, idx) => {
+        const leftSide = pin.x < 250
+        const boxX = leftSide ? pin.x - 145 : pin.x + 18
+        const boxY = pin.y - 15
 
-      {/* Dot matrix */}
-      <g clipPath="url(#cpGlobe)">
-        {allDots.map((d, i) => (
-          <circle key={i} cx={d.x} cy={d.y} r="2"
-            fill="#e63950"
-            opacity={d.y > CY + 60 ? 0.6 : 0.25} />
-        ))}
-      </g>
+        // Custom borders and glows for tags
+        const tagBorderColor = pin.isRussia 
+          ? 'rgba(230, 57, 80, 0.7)' 
+          : 'rgba(0, 240, 255, 0.45)'
 
-      {/* Latitude grid lines (curved) */}
-      <g clipPath="url(#cpGlobe)" stroke="#e63950" strokeWidth="0.7" fill="none" opacity="0.14">
-        {[-180, -120, -60, 0, 60, 120, 180].map((dy, i) => {
-          const y = CY + dy
-          const ratio = Math.sqrt(Math.max(0, 1 - ((y - CY) / R) ** 2))
-          return <ellipse key={i} cx={CX} cy={y} rx={R * ratio} ry={15 * ratio + 2} />
-        })}
-      </g>
+        const tagShadow = pin.isRussia
+          ? '0 6px 20px rgba(0,0,0,0.65), 0 0 12px rgba(230,57,80,0.25)'
+          : '0 6px 20px rgba(0,0,0,0.65), 0 0 12px rgba(0,240,255,0.15)'
 
-      {/* Longitude grid lines (curved) */}
-      <g clipPath="url(#cpGlobe)" stroke="#e63950" strokeWidth="0.7" fill="none" opacity="0.11">
-        {[-180, -120, -60, 0, 60, 120, 180].map((dx, i) => {
-          const scaleX = 1 - Math.abs(dx) / 240
-          return <ellipse key={i} cx={CX + dx} cy={CY} rx={R * scaleX * 0.15 + 4} ry={R} />
-        })}
-      </g>
+        const tagColor = pin.isRussia ? '#ff4a6b' : '#00f0ff'
 
-      {/* Bottom red glow */}
-      <ellipse cx={CX} cy={540} rx={330} ry={145} fill="url(#gBottomGlow)" />
-      {/* Center ambient */}
-      <circle cx={CX} cy={CY} r={220} fill="url(#gCenterGlow)" />
-
-      {/* Location Pins */}
-      {pins.map((p, i) => {
-        const textLen = p.name.length * 7.5
-        const boxW = Math.max(70, textLen + 16)
-        const boxH = 22
-        const boxX = p.left ? p.x - boxW - 12 : p.x + 12
-        const boxY = p.y - 28
         return (
-          <g key={i} filter="url(#fPinGlow)">
-            <circle cx={p.x} cy={p.y} r="14" fill="#e63950" opacity="0.15" />
-            <circle cx={p.x} cy={p.y} r="7"  fill="#e63950" opacity="0.95" />
-            <circle cx={p.x} cy={p.y} r="3" fill="#ff8fa3" />
-            <rect x={boxX} y={boxY} width={boxW} height={boxH} rx="6"
-              fill="rgba(8,4,6,0.95)" stroke="rgba(230,57,80,0.6)" strokeWidth="1" />
-            <text x={boxX + boxW / 2} y={boxY + 14.5} textAnchor="middle"
-              fill="white" fontSize="10.5" fontFamily="Inter, sans-serif" fontWeight="700">
-              {p.name}
-            </text>
-            <line x1={p.x} y1={p.y - 7} x2={p.left ? p.x - 12 : p.x + 12} y2={boxY + boxH}
-              stroke="#e63950" strokeWidth="1" opacity="0.6" />
-          </g>
+          <div
+            key={idx}
+            style={{
+              position: 'absolute',
+              left: `${boxX}px`,
+              top: `${boxY}px`,
+              opacity: pin.opacity,
+              transition: 'opacity 0.12s ease',
+              display: 'flex',
+              alignItems: 'center',
+              pointerEvents: 'none',
+              zIndex: 10,
+              width: '130px',
+              justifyContent: leftSide ? 'flex-end' : 'flex-start'
+            }}
+          >
+            {leftSide ? (
+              <>
+                <div
+                  style={{
+                    padding: '5px 12px',
+                    background: 'rgba(5, 6, 12, 0.82)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    border: `1.5px solid ${tagBorderColor}`,
+                    borderRadius: '10px',
+                    color: '#fff',
+                    fontSize: '0.78rem',
+                    fontWeight: 900,
+                    letterSpacing: '0.5px',
+                    whiteSpace: 'nowrap',
+                    boxShadow: tagShadow,
+                    fontFamily: 'var(--font-sans)',
+                    order: 1
+                  }}
+                >
+                  <span style={{ color: tagColor, marginRight: '4px' }}>●</span>
+                  {pin.name}
+                </div>
+                <div
+                  style={{
+                    width: '14px',
+                    height: '1.5px',
+                    background: `linear-gradient(to right, ${tagBorderColor}, transparent)`,
+                    order: 2,
+                    flexShrink: 0
+                  }}
+                />
+              </>
+            ) : (
+              <>
+                <div
+                  style={{
+                    width: '14px',
+                    height: '1.5px',
+                    background: `linear-gradient(to left, ${tagBorderColor}, transparent)`,
+                    order: 1,
+                    flexShrink: 0
+                  }}
+                />
+                <div
+                  style={{
+                    padding: '5px 12px',
+                    background: 'rgba(5, 6, 12, 0.82)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    border: `1.5px solid ${tagBorderColor}`,
+                    borderRadius: '10px',
+                    color: '#fff',
+                    fontSize: '0.78rem',
+                    fontWeight: 900,
+                    letterSpacing: '0.5px',
+                    whiteSpace: 'nowrap',
+                    boxShadow: tagShadow,
+                    fontFamily: 'var(--font-sans)',
+                    order: 2
+                  }}
+                >
+                  <span style={{ color: tagColor, marginRight: '4px' }}>●</span>
+                  {pin.name}
+                </div>
+              </>
+            )}
+          </div>
         )
       })}
-    </svg>
+    </div>
   )
 }
