@@ -1,9 +1,102 @@
 import { useState } from 'react'
 import { Apple, Bot, Monitor, Terminal, Tv, ChevronDown, Check, ExternalLink, Plus, Copy, Settings, Download, CloudDownload, ShieldCheck } from 'lucide-react'
 import { OS, ClientApp, Subscription } from '../../types'
+import { useMouseGlow } from '../../hooks/useMouseGlow'
 
 interface Props {
   subscription: Subscription
+}
+
+interface StepCardProps {
+  step: any
+  copiedKey: boolean
+  handleAction: (action: string, link?: string) => void
+}
+
+const StepCard = ({ step, copiedKey, handleAction }: StepCardProps) => {
+  const glow = useMouseGlow()
+  
+  let IconComp = Check;
+  let color = '#fbbf24';
+  let bg = 'rgba(251, 191, 36, 0.08)';
+
+  if (step.iconType === 'download') { IconComp = Download; color = '#e63950'; bg = 'rgba(230, 57, 80, 0.08)'; }
+  if (step.iconType === 'cloud') { IconComp = CloudDownload; color = '#e63950'; bg = 'rgba(230, 57, 80, 0.08)'; }
+  if (step.iconType === 'settings') { IconComp = Settings; color = '#38bdf8'; bg = 'rgba(56, 189, 248, 0.08)'; }
+  if (step.iconType === 'warning') { IconComp = Settings; color = '#ef4444'; bg = 'rgba(239, 68, 68, 0.08)'; }
+  if (step.iconType === 'check') { IconComp = Check; color = '#22c55e'; bg = 'rgba(34, 197, 94, 0.08)'; }
+  if (step.iconType === 'copy') { IconComp = Copy; color = '#a855f7'; bg = 'rgba(168, 85, 247, 0.08)'; }
+
+  return (
+    <div 
+      className="glow-card-cyber"
+      onMouseMove={glow.handleMouseMove}
+      onMouseEnter={glow.onMouseEnter}
+      onMouseLeave={glow.onMouseLeave}
+      style={{ 
+        ...glow.style,
+        display: 'flex', 
+        padding: '24px', 
+        gap: '20px',
+        zIndex: 5
+      }}
+    >
+      <div style={{ flexShrink: 0, width: '48px', height: '48px', borderRadius: '50%', background: bg, border: `1px solid ${color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <IconComp size={22} color={color} />
+      </div>
+      <div>
+        <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', marginBottom: '10px', fontFamily: 'var(--font-title)' }}>{step.title}</h4>
+        <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: step.buttons ? '16px' : '0' }}>{step.desc}</p>
+        
+        {step.buttons && (
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', position: 'relative', zIndex: 10 }}>
+            {step.buttons.map((btn: any, i: number) => {
+              let BtnIcon = ExternalLink;
+              if (btn.iconType === 'plus') BtnIcon = Plus;
+              if (btn.iconType === 'copy') BtnIcon = Copy;
+
+              const isPrimary = btn.primary;
+
+              return (
+                <button 
+                  key={i} 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if ('action' in btn) handleAction(btn.action, btn.link);
+                  }} 
+                  style={{
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    padding: '11px 22px', 
+                    borderRadius: '12px', 
+                    fontSize: '0.88rem', 
+                    fontWeight: 700, 
+                    cursor: 'pointer', 
+                    transition: 'all 0.25s ease',
+                    background: isPrimary ? '#e63950' : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${isPrimary ? '#e63950' : 'rgba(255,255,255,0.12)'}`,
+                    color: '#fff',
+                    boxShadow: isPrimary ? '0 4px 14px rgba(230, 57, 80, 0.3)' : 'none'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = isPrimary ? '#ff4d66' : 'rgba(255,255,255,0.08)';
+                    if (isPrimary) e.currentTarget.style.boxShadow = '0 6px 20px rgba(230, 57, 80, 0.5)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = isPrimary ? '#e63950' : 'rgba(255,255,255,0.04)';
+                    if (isPrimary) e.currentTarget.style.boxShadow = '0 4px 14px rgba(230, 57, 80, 0.3)';
+                  }}
+                >
+                  <BtnIcon size={16} /> {'action' in btn && btn.action === 'copy_key' && copiedKey ? 'Скопировано!' : btn.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 export const ClientInstructions = ({ subscription }: Props) => {
@@ -96,7 +189,7 @@ export const ClientInstructions = ({ subscription }: Props) => {
           else if (selectedOS === 'iOS') clients = ['happ', 'stash', 'shadowrocket', 'streisand'];
           else if (selectedOS === 'Android') clients = ['happ', 'flclashx', 'clash meta', 'v2rayng'];
           else if (selectedOS === 'Linux') clients = ['happ', 'koala clash', 'Prizrak-box'];
-          else if (selectedOS === 'Android TV') clients = ['happ']; // Remove vpn4tv for compliance and simplicity
+          else if (selectedOS === 'Android TV') clients = ['happ'];
           else if (selectedOS === 'Apple TV') clients = ['happ', 'shadowrocket', 'stash'];
           else clients = ['happ'];
 
@@ -338,99 +431,14 @@ export const ClientInstructions = ({ subscription }: Props) => {
              }
           }
 
-          return installSteps.map(step => {
-            let IconComp = Check;
-            let color = '#fbbf24';
-            let bg = 'rgba(251, 191, 36, 0.08)';
-
-            if (step.iconType === 'download') { IconComp = Download; color = '#e63950'; bg = 'rgba(230, 57, 80, 0.08)'; }
-            if (step.iconType === 'cloud') { IconComp = CloudDownload; color = '#e63950'; bg = 'rgba(230, 57, 80, 0.08)'; }
-            if (step.iconType === 'settings') { IconComp = Settings; color = '#38bdf8'; bg = 'rgba(56, 189, 248, 0.08)'; }
-            if (step.iconType === 'warning') { IconComp = Settings; color = '#ef4444'; bg = 'rgba(239, 68, 68, 0.08)'; }
-            if (step.iconType === 'check') { IconComp = Check; color = '#22c55e'; bg = 'rgba(34, 197, 94, 0.08)'; }
-            if (step.iconType === 'copy') { IconComp = Copy; color = '#a855f7'; bg = 'rgba(168, 85, 247, 0.08)'; }
-
-            return (
-              <div 
-                key={step.id} 
-                style={{ 
-                  display: 'flex', 
-                  padding: '24px', 
-                  background: 'rgba(10, 12, 26, 0.6)', 
-                  backdropFilter: 'blur(20px)', 
-                  borderRadius: '18px', 
-                  border: '1px solid rgba(255,255,255,0.05)', 
-                  gap: '20px',
-                  transition: 'all 0.3s ease',
-                  transform: 'translateY(0)'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.3)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                <div style={{ flexShrink: 0, width: '48px', height: '48px', borderRadius: '50%', background: bg, border: `1px solid ${color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <IconComp size={22} color={color} />
-                </div>
-                <div>
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', marginBottom: '10px', fontFamily: 'var(--font-title)' }}>{step.title}</h4>
-                  <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: step.buttons ? '16px' : '0' }}>{step.desc}</p>
-                  
-                  {step.buttons && (
-                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                      {step.buttons.map((btn: any, i: number) => {
-                        let BtnIcon = ExternalLink;
-                        if (btn.iconType === 'plus') BtnIcon = Plus;
-                        if (btn.iconType === 'copy') BtnIcon = Copy;
-
-                        const isPrimary = btn.primary;
-
-                        return (
-                          <button 
-                            key={i} 
-                            onClick={() => {
-                              if ('action' in btn) handleAction(btn.action, btn.link);
-                            }} 
-                            style={{
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              gap: '8px',
-                              padding: '11px 22px', 
-                              borderRadius: '12px', 
-                              fontSize: '0.88rem', 
-                              fontWeight: 700, 
-                              cursor: 'pointer', 
-                              transition: 'all 0.25s ease',
-                              background: isPrimary ? '#e63950' : 'rgba(255,255,255,0.04)',
-                              border: `1px solid ${isPrimary ? '#e63950' : 'rgba(255,255,255,0.12)'}`,
-                              color: '#fff',
-                              boxShadow: isPrimary ? '0 4px 14px rgba(230, 57, 80, 0.3)' : 'none'
-                            }}
-                            onMouseEnter={e => {
-                              e.currentTarget.style.background = isPrimary ? '#ff4d66' : 'rgba(255,255,255,0.08)';
-                              if (isPrimary) e.currentTarget.style.boxShadow = '0 6px 20px rgba(230, 57, 80, 0.5)';
-                            }}
-                            onMouseLeave={e => {
-                              e.currentTarget.style.background = isPrimary ? '#e63950' : 'rgba(255,255,255,0.04)';
-                              if (isPrimary) e.currentTarget.style.boxShadow = '0 4px 14px rgba(230, 57, 80, 0.3)';
-                            }}
-                          >
-                            <BtnIcon size={16} /> {'action' in btn && btn.action === 'copy_key' && copiedKey ? 'Скопировано!' : btn.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          });
+          return installSteps.map(step => (
+            <StepCard 
+              key={step.id} 
+              step={step} 
+              copiedKey={copiedKey} 
+              handleAction={handleAction} 
+            />
+          ));
         })()}
       </div>
     </div>

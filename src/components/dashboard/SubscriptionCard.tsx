@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { User, Key } from 'lucide-react'
 import { Profile, Subscription } from '../../types'
+import { useMouseGlow } from '../../hooks/useMouseGlow'
 
 interface Props {
   profile: Profile
@@ -10,6 +11,7 @@ interface Props {
 
 export const SubscriptionCard = ({ profile, subscription, allSubscriptions }: Props) => {
   const navigate = useNavigate()
+  const glow = useMouseGlow()
 
   /**
    * Вычисляет количество оставшихся дней активной подписки.
@@ -58,7 +60,17 @@ export const SubscriptionCard = ({ profile, subscription, allSubscriptions }: Pr
   const red = '#e63950'
 
   return (
-    <div className="sec-profile-card" style={{ background: 'rgba(10, 12, 26, 0.6)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '24px', padding: '30px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(230, 57, 80, 0.02)' }}>
+    <div 
+      className="sec-profile-card glow-card-cyber" 
+      onMouseMove={glow.handleMouseMove}
+      onMouseEnter={glow.onMouseEnter}
+      onMouseLeave={glow.onMouseLeave}
+      style={{ 
+        ...glow.style,
+        padding: '30px', 
+        zIndex: 5 
+      }}
+    >
       <div className="sec-profile-header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <div className="sec-profile-avatar" style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(230,57,80,0.1)', border: '1px solid rgba(230,57,80,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <User size={24} color="#e63950" strokeWidth={2.5} />

@@ -10,10 +10,12 @@ import { ActivationCard } from './dashboard/ActivationCard'
 import { ReferralProgram } from './dashboard/ReferralProgram'
 import { ClientInstructions } from './dashboard/ClientInstructions'
 import { SupportChat } from './dashboard/SupportChat'
+import { useMouseGlow } from '../hooks/useMouseGlow'
 
 export default function Dashboard() {
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
+  const glow = useMouseGlow()
 
   const {
     loading,
@@ -150,7 +152,17 @@ export default function Dashboard() {
           />
 
             {/* Quests Card */}
-            <div className="sec-dash-card" style={{ background: 'rgba(10, 12, 26, 0.6)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '24px', padding: '28px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)' }}>
+            <div 
+              className="sec-dash-card glow-card-cyber" 
+              onMouseMove={glow.handleMouseMove}
+              onMouseEnter={glow.onMouseEnter}
+              onMouseLeave={glow.onMouseLeave}
+              style={{ 
+                ...glow.style,
+                padding: '28px', 
+                zIndex: 5 
+              }}
+            >
               <div className="sec-dash-card-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                 <div className="sec-dash-icon-box" style={{ background: 'rgba(230,57,80,0.12)', width: '38px', height: '38px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Send size={18} color="#e63950" strokeWidth={2.5} />
