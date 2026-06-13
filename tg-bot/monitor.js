@@ -8,8 +8,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
+/**
+ * Серверная служба мониторинга ресурсов ноды (monitor.js).
+ * 
+ * Назначение:
+ * 1. Каждую минуту собирает системные метрики виртуального сервера VPS:
+ *    - Загрузка процессора: считывает 1-минутный Load Average из модуля `os`
+ *      и преобразует его в процентную загрузку относительно количества ядер CPU.
+ *    - Симуляция задержки (ping): генерирует реалистичный сетевой пинг для клиента (45-55 мс).
+ * 2. Обновляет запись соответствующего сервера в таблице `vpn_servers` в Supabase,
+ *    подтверждая статус `online` и актуальные показатели нагрузки для балансировщика клиентов.
+ */
+
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error("❌ Отсутствуют необходимые переменные окружения для monitor.js");

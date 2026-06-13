@@ -9,6 +9,12 @@ interface Particle {
   size: number
 }
 
+/**
+ * CyberBackground - интерактивный полноэкранный холст на Canvas.
+ * Отрисовывает космический фон со звездным дрейфом и градиентными туманностями,
+ * которые плавно смещаются при движении мыши (эффект 3D-параллакса).
+ * Используется в качестве глобальной подложки сайта.
+ */
 export const CyberBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -22,6 +28,10 @@ export const CyberBackground = () => {
     let width = window.innerWidth
     let height = window.innerHeight
 
+    /**
+     * Обрабатывает изменение размеров окна, растягивая холст
+     * и подстраивая коэффициент масштабирования под плотность пикселей экрана (devicePixelRatio).
+     */
     const handleResize = () => {
       width = window.innerWidth
       height = window.innerHeight
@@ -33,53 +43,60 @@ export const CyberBackground = () => {
     window.addEventListener('resize', handleResize)
     handleResize()
 
-    // Generate random 3D particles
+    // ─── Инициализация 3D-частиц (звёзд) ───
     const particles: Particle[] = []
     const particleCount = 75
+    // Палитра свечения: циановый, красный, фиолетовый и белый цвета
     const colors = [
-      'rgba(0, 240, 255, ', // Cyan
-      'rgba(230, 57, 80, ', // Red
-      'rgba(168, 85, 247, ', // Violet
-      'rgba(255, 255, 255, ' // White
+      'rgba(0, 240, 255, ',  // Циановый
+      'rgba(230, 57, 80, ',  // Фирменный красный
+      'rgba(168, 85, 247, ', // Фиолетовый
+      'rgba(255, 255, 255, ' // Белый
     ]
 
     for (let i = 0; i < particleCount; i++) {
       particles.push({
+        // Разбрасываем координаты в пространстве шире текущего экрана
         x: (Math.random() - 0.5) * width * 2.5,
         y: (Math.random() - 0.5) * height * 2.5,
-        z: Math.random() * 800 + 100,
+        z: Math.random() * 800 + 100, // Глубина
         color: colors[Math.floor(Math.random() * colors.length)],
-        speedZ: Math.random() * 0.15 + 0.05,
+        speedZ: Math.random() * 0.15 + 0.05, // Скорость приближения к камере
         size: Math.random() * 1.5 + 0.5
       })
     }
 
-    // Mouse parallax tracking
+    // Переменные для сглаживания движения мыши (инерция параллакса)
     let targetMouseX = 0
     let targetMouseY = 0
     let mouseX = 0
     let mouseY = 0
 
     const handleMouseMove = (e: MouseEvent) => {
-      targetMouseX = (e.clientX - width / 2) / (width / 2) // -1 to 1
-      targetMouseY = (e.clientY - height / 2) / (height / 2) // -1 to 1
+      // Переводим координаты мыши в диапазон от -1 до 1 относительно центра экрана
+      targetMouseX = (e.clientX - width / 2) / (width / 2)
+      targetMouseY = (e.clientY - height / 2) / (height / 2)
     }
 
     window.addEventListener('mousemove', handleMouseMove)
 
     const perspective = 400
 
+    /**
+     * Основной цикл рендеринга анимации Canvas
+     */
     const render = () => {
-      // Smooth interpolation for mouse movements (inertia)
+      // Линейная интерполяция (lerp) для пружинного движения мыши
       mouseX += (targetMouseX - mouseX) * 0.06
       mouseY += (targetMouseY - mouseY) * 0.06
 
-      // Deep space base fill
+      // Очистка и заливка базовым космическим темным цветом
       ctx.fillStyle = '#020205'
       ctx.fillRect(0, 0, width, height)
 
-      // 1. Draw glowing nebulas with mouse parallax
-      // Nebula 1 (Red glow on top right)
+      // ─── 1. Отрисовка космических туманностей с параллаксом ───
+      
+      // Туманность 1: Красное свечение сверху справа
       const redX = width * 0.8 - mouseX * 80
       const redY = height * 0.2 - mouseY * 80
       const redGrad = ctx.createRadialGradient(redX, redY, 50, redX, redY, 400)
@@ -89,7 +106,7 @@ export const CyberBackground = () => {
       ctx.fillStyle = redGrad
       ctx.fillRect(0, 0, width, height)
 
-      // Nebula 2 (Cyan glow on bottom left)
+      // Туманность 2: Циановое свечение снизу слева
       const cyanX = width * 0.2 - mouseX * 110
       const cyanY = height * 0.8 - mouseY * 110
       const cyanGrad = ctx.createRadialGradient(cyanX, cyanY, 50, cyanX, cyanY, 500)
@@ -99,7 +116,7 @@ export const CyberBackground = () => {
       ctx.fillStyle = cyanGrad
       ctx.fillRect(0, 0, width, height)
 
-      // Nebula 3 (Violet center glow)
+      // Туманность 3: Фиолетовое свечение по центру
       const violetX = width * 0.5 - mouseX * 50
       const violetY = height * 0.5 - mouseY * 50
       const violetGrad = ctx.createRadialGradient(violetX, violetY, 50, violetX, violetY, 350)
@@ -109,18 +126,18 @@ export const CyberBackground = () => {
       ctx.fillStyle = violetGrad
       ctx.fillRect(0, 0, width, height)
 
-      // 2. Render 3D Parallax space particles
+      // ─── 2. Рендеринг и проекция 3D-звёзд ───
       particles.forEach(p => {
-        // Move towards viewer (decrease z)
+        // Звезды движутся на нас (уменьшаем глубину Z)
         p.z -= p.speedZ
+        // Если звезда пролетела экран, сбрасываем её назад в глубину
         if (p.z <= 0) {
           p.z = 800 + Math.random() * 200
           p.x = (Math.random() - 0.5) * width * 2.5
           p.y = (Math.random() - 0.5) * height * 2.5
         }
 
-        // Project to 2D screen coordinates, applying mouse parallax shifting
-        // Higher parallax on closer particles
+        // Проекция 3D в 2D с учетом параллакса мыши (ближние звезды сдвигаются сильнее)
         const parallaxFactorX = mouseX * (1000 - p.z) * 0.12
         const parallaxFactorY = mouseY * (1000 - p.z) * 0.12
 
@@ -128,8 +145,9 @@ export const CyberBackground = () => {
         const projX = (p.x - parallaxFactorX) * scale + width / 2
         const projY = (p.y - parallaxFactorY) * scale + height / 2
 
+        // Рисуем звезду, если она попала в видимую область экрана
         if (projX >= 0 && projX <= width && projY >= 0 && projY <= height) {
-          const depthRatio = (1000 - p.z) / 1000 // 0 to 1
+          const depthRatio = (1000 - p.z) / 1000 // 0 (вдали) до 1 (вблизи)
           const alpha = depthRatio * 0.65
           const size = p.size * (0.8 + depthRatio * 1.5)
 
@@ -138,7 +156,7 @@ export const CyberBackground = () => {
           ctx.arc(projX, projY, size, 0, Math.PI * 2)
           ctx.fill()
 
-          // Draw small glow for larger/closer particles
+          // Эффект мягкого свечения для ближних крупных звезд
           if (p.z < 300) {
             ctx.fillStyle = `${p.color}${alpha * 0.25})`
             ctx.beginPath()

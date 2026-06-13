@@ -16,6 +16,13 @@ interface PlanCardProps {
   }
 }
 
+/**
+ * Карточка тарифного плана.
+ * Поддерживает интерактивную подсветку (glow) при движении мыши,
+ * плавные анимации появления и раскрытия списка возможностей.
+ * 
+ * @param {PlanCardProps} props - Параметры карточки
+ */
 const PlanCard = ({ plan }: PlanCardProps) => {
   const navigate = useNavigate()
   const glow = useMouseGlow()
@@ -176,6 +183,11 @@ const PlanCard = ({ plan }: PlanCardProps) => {
   )
 }
 
+/**
+ * Секция выбора тарифных планов на лендинге.
+ * Выводит сетку доступных тарифов (базовый, для роутера, всё вместе)
+ * и декоративные радиальные свечения для создания глубины.
+ */
 export const Pricing = () => {
   const plans = [
     {

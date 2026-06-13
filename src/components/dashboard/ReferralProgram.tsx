@@ -8,6 +8,18 @@ interface Props {
   friends: Friend[]
 }
 
+/**
+ * Карточка реферальной программы (ReferralProgram).
+ * 
+ * Особенности:
+ * 1. Генерирует уникальную реферальную ссылку на основе `username` пользователя.
+ * 2. Предоставляет кнопку для копирования реферальной ссылки в буфер обмена.
+ * 3. Отображает список приглашенных друзей и статус их активности.
+ * 
+ * *Примечание: В новой версии базы данных Connect логика рефералов отключена на уровне хука API.*
+ * 
+ * @param {Props} props - Параметры компонента
+ */
 export const ReferralProgram = ({ profile, friends }: Props) => {
   const [copiedRef, setCopiedRef] = useState(false)
   const glow = useMouseGlow()

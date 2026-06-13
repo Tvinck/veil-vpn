@@ -3,6 +3,19 @@ import { Apple, Bot, Monitor, Terminal, Tv, ChevronDown, Check, ExternalLink, Pl
 import { OS, ClientApp, Subscription } from '../../types'
 import { useMouseGlow } from '../../hooks/useMouseGlow'
 
+/**
+ * Компонент пошаговых инструкций по настройке подключения (ClientInstructions).
+ * 
+ * Предоставляет инструкции для различных ОС: iOS, Android, Windows, macOS, Android TV, Linux.
+ * 
+ * Особенности:
+ * 1. Фильтрация инструкций в зависимости от выбранной операционной системы и рекомендуемого клиента (например, Hiddify, v2rayNG, Nekobox).
+ * 2. Генерация шагов установки: скачивание клиента, импорт токена подписки, запуск подключения.
+ * 3. Поддерживает копирование токена подписки одной кнопкой.
+ * 
+ * @param {object} props - Параметры компонента
+ * @param {Subscription} props.subscription - Объект подписки пользователя
+ */
 interface Props {
   subscription: Subscription
 }

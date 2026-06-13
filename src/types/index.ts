@@ -26,4 +26,6 @@ export interface Subscription {
   subscription_key: string
   token: string
   created_at: string
+  tg_bot_linked?: boolean
+  tg_channel_subscribed?: boolean
 }

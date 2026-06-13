@@ -9,8 +9,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
+/**
+ * Серверная служба синхронизации X-UI и базы данных Connect (sync.js).
+ * 
+ * Назначение:
+ * 1. Авторизация на панели X-UI по API с использованием сессионных Cookie и CSRF-токена,
+ *    динамически извлекаемого из HTML разметки главной страницы.
+ * 2. Двусторонняя периодическая синхронизация (каждые 2 минуты):
+ *    - Чтение списка активных подписок `vpn_subscriptions` из Supabase.
+ *    - Синхронизация расхода трафика: передает метрики (up + down байты) клиентов из X-UI обратно в БД.
+ *    - Добавление новых активных профилей во VLESS inbound в X-UI.
+ *    - Автоматическая деактивация/блокировка истекших или заблокированных клиентов.
+ *    - Удаление сиротских клиентов (orphans), отсутствующих в базе данных.
+ * 3. Реалтайм-обновление: подписывается на Postgres Realtime канал Supabase `vpn_subscriptions`
+ *    и мгновенно триггерит синхронизацию при любых изменениях в таблице.
+ */
+
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
 const XUI_URL     = process.env.XUI_URL;      // e.g. https://IP:PORT/basepath
 const XUI_USER    = process.env.XUI_USERNAME;
 const XUI_PASS    = process.env.XUI_PASSWORD;

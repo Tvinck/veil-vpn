@@ -2,6 +2,19 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { Profile, Subscription, Friend } from '../types'
 
+/**
+ * Кастомный React-хук для загрузки данных личного кабинета.
+ * 
+ * Логика работы:
+ * 1. Запрашивает запись подписки из таблицы `vpn_subscriptions` по уникальному UUID-токену.
+ * 2. При успешном получении, запрашивает ВСЕ подписки, привязанные к имени пользователя (`username`),
+ *    чтобы отобразить вкладки мультиподписки.
+ * 3. Формирует объект профиля пользователя. Временные поля `tg_bot_linked` и `tg_channel_subscribed`
+ *    инициализируются значением false, так как в текущей схеме БД они не сохраняются перманентно.
+ * 4. Загружает список реферальных друзей (временно отключено/пусто `setFriends([])`).
+ * 
+ * @param {string|undefined} token - Токен доступа пользователя (из параметров URL)
+ */
 export function useDashboardData(token: string | undefined) {
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -54,8 +67,8 @@ export function useDashboardData(token: string | undefined) {
         username: sub.username,
         telegram_username: sub.telegram_username || '',
         avatar_color: '#E63950', // Fallback color
-        tg_bot_linked: false, // Not currently tracked in new schema
-        tg_channel_subscribed: false // Not currently tracked in new schema
+        tg_bot_linked: sub.tg_bot_linked || false, // Загрузка реального состояния привязки бота из БД
+        tg_channel_subscribed: sub.tg_channel_subscribed || false // Загрузка реального состояния подписки на канал из БД
       }
 
       setProfile(prof)

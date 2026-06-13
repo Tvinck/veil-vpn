@@ -70,6 +70,16 @@ const listItem = {
   }
 }
 
+/**
+ * Главный лендинг проекта Veil Secure (Veil.Net).
+ * 
+ * Особенности:
+ * 1. Интеграция 3D визуализаций (глобус, волны Безье, стеклянная звезда, объемная шестеренка, торус).
+ * 2. Модальное окно авторизации/входа в личный кабинет.
+ * 3. Парсинг токенов доступа: автоматически извлекает 32-символьный UUID
+ *    из полной ссылки вида `https://domain.com/cabinet/<UUID>` или `https://domain.com/<UUID>`.
+ * 4. Плавное появление элементов с помощью framer-motion stagger анимации.
+ */
 export default function LandingPage() {
   const navigate = useNavigate()
   const [isLoginOpen, setIsLoginOpen] = useState(false)

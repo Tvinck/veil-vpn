@@ -9,12 +9,40 @@ interface Pin {
   z: number
 }
 
+/**
+ * Компонент интерактивного 3D-глобуса, отображающего сетевую связность.
+ * 
+ * Использованные математические концепции:
+ * 1. Распределение точек на сфере по Фибоначчи (Fibonacci Sphere):
+ *    Обеспечивает равномерное распределение N точек на единичной сфере.
+ *    Угол phi вычисляется через инверсию косинуса линейного распределения:
+ *    \(\phi_i = \arccos(-1 + \frac{2i}{N})\)
+ *    Золотой угол theta вычисляется с помощью золотого сечения для минимизации перекрытий:
+ *    \(\theta_i = \sqrt{N \cdot \pi} \cdot \phi_i\)
+ * 
+ * 2. Перевод из сферических координат в декартовы:
+ *    Широта (lat) и долгота (lon) переводятся в 3D координаты (x, y, z) на единичной сфере:
+ *    \(x = \cos(lat) \cdot \sin(lon)\)
+ *    \(y = -\sin(lat)\)
+ *    \(z = \cos(lat) \cdot \cos(lon)\)
+ * 
+ * 3. 3D-вращение вокруг осей X и Y с использованием тригонометрических матриц поворота:
+ *    \(x_{rotated} = x \cdot \cos(y) - z \cdot \sin(y)\)
+ *    \(z_{temp} = z \cdot \cos(y) + x \cdot \sin(y)\)
+ *    \(y_{rotated} = y \cdot \cos(x) - z_{temp} \cdot \sin(x)\)
+ * 
+ * 4. Перспективная проекция:
+ *    3D координаты проецируются на 2D экран с учетом глубины Z (перспектива):
+ *    \(scale = \frac{perspective}{perspective + z}\)
+ *    \(screenX = x \cdot scale \cdot radius + width / 2\)
+ *    \(screenY = y \cdot scale \cdot radius + height / 2\)
+ */
 export const WorldGlobe = () => {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [projectedPins, setProjectedPins] = useState<any[]>([])
 
-  // Shared rotation refs so event handlers can update them and canvas render loop reads them smoothly
+  // Совместные ссылки на параметры вращения для плавного рендеринга и обработки перетаскивания
   const rotationRef = useRef({ x: 0.25, y: 0 })
   const dragRef = useRef({
     isDragging: false,
@@ -32,19 +60,51 @@ export const WorldGlobe = () => {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const width = 500
-    const height = 500
-    canvas.width = width * window.devicePixelRatio
-    canvas.height = height * window.devicePixelRatio
-    canvas.style.width = `${width}px`
-    canvas.style.height = `${height}px`
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
+    // Динамические параметры размера холста
+    let width = 500
+    let height = 500
 
-    // Generate points on sphere using Fibonacci distribution
+    // Функция авто-масштабирования Canvas под размеры родительского контейнера (адаптивность)
+    const updateSize = () => {
+      if (containerRef.current && canvas) {
+        const rect = containerRef.current.getBoundingClientRect()
+        // Ограничиваем диаметр глобуса в пределах от 280px до 500px для мобильных устройств
+        const currentSize = Math.max(280, Math.min(500, rect.width || 500))
+        width = currentSize
+        height = currentSize
+        
+        canvas.width = width * window.devicePixelRatio
+        canvas.height = height * window.devicePixelRatio
+        canvas.style.width = `${width}px`
+        canvas.style.height = `${height}px`
+        
+        ctx.resetTransform()
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
+      }
+    }
+
+    updateSize()
+    window.addEventListener('resize', updateSize)
+
+    // IntersectionObserver для приостановки рендеринга, когда элемент скрыт из виду (оптимизация CPU/GPU)
+    let isVisible = true
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        isVisible = entry.isIntersecting
+      })
+    }, { threshold: 0.05 })
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current)
+    }
+
+    // Генерация точек каркаса глобуса с помощью решетки Фибоначчи
     const dots: { x: number; y: number; z: number }[] = []
     const dotCount = 450
     for (let i = 0; i < dotCount; i++) {
+      // phi регулирует сдвиг от полюса к полюсу (Z-координата)
       const phi = Math.acos(-1 + (2 * i) / dotCount)
+      // theta закручивает спираль вокруг оси Y по золотому сечению
       const theta = Math.sqrt(dotCount * Math.PI) * phi
       dots.push({
         x: Math.cos(theta) * Math.sin(phi),
@@ -116,6 +176,11 @@ export const WorldGlobe = () => {
     let reqId: number
 
     const render = () => {
+      // Если глобус скрыт, пропускаем расчет физики и перерисовку
+      if (!isVisible) {
+        reqId = requestAnimationFrame(render)
+        return
+      }
       ctx.clearRect(0, 0, width, height)
 
       // Apply drag velocities & friction
@@ -143,7 +208,7 @@ export const WorldGlobe = () => {
       const cosY = Math.cos(rotY), sinY = Math.sin(rotY)
       const cosX = Math.cos(rotX), sinX = Math.sin(rotX)
 
-      const radius = 175
+      const radius = (width / 500) * 175 // Пропорциональное изменение радиуса при изменении размеров canvas
       const perspective = 500
 
       // Helper function to rotate 3D point
@@ -222,21 +287,23 @@ export const WorldGlobe = () => {
         ctx.fill()
       })
 
-      // ─── 4. 3D NETWORK CONNECTION ARCS ───
+      // ─── 4. РАСЧЕТ И ОТРИСОВКА 3D-ДУГ СВЯЗЕЙ СЕТИ ───
+      // Дуги рисуются в виде квадратичных кривых Безье в 3D пространстве:
+      // B(t) = (1-t)^2 * P0 + 2*(1-t)*t * P1 + t^2 * P2, где t от 0 до 1.
+      // P0 - точка старта (Россия), P2 - точка назначения (сервер), P1 - вершина дуги (apex).
       pulseTime += 0.007
       
       targetPins.forEach((target, idx) => {
         const start = russiaPin
         const end = target
 
-        // Compute curve points
-        // Midpoint of start and end vectors
+        // Находим среднюю векторную точку между стартом и концом для вычисления направления изгиба
         const midX = (start.x + end.x) / 2
         const midY = (start.y + end.y) / 2
         const midZ = (start.z + end.z) / 2
         const len = Math.sqrt(midX*midX + midY*midY + midZ*midZ)
         
-        // Apex height
+        // Высота дуги (умножается на нормированный вектор середины, чтобы поднять дугу над поверхностью глобуса)
         const apexHeight = 1.38
         const apex = {
           x: (midX / len) * apexHeight,
@@ -244,7 +311,7 @@ export const WorldGlobe = () => {
           z: (midZ / len) * apexHeight
         }
 
-        // Generate bezier segments
+        // Вычисление точек дуги по квадратичной формуле Безье
         const steps = 30
         const curvePoints: { x: number; y: number; z: number }[] = []
         for (let i = 0; i <= steps; i++) {
@@ -255,7 +322,7 @@ export const WorldGlobe = () => {
           curvePoints.push({ x, y, z })
         }
 
-        // Draw bezier arc segments with depth fading
+        // Отрисовка сегментов кривой Безье с интерполяцией прозрачности по глубине
         for (let i = 0; i < curvePoints.length - 1; i++) {
           const pt1 = rotatePoint(curvePoints[i])
           const pt2 = rotatePoint(curvePoints[i + 1])
@@ -399,7 +466,11 @@ export const WorldGlobe = () => {
     }
 
     render()
-    return () => cancelAnimationFrame(reqId)
+    return () => {
+      cancelAnimationFrame(reqId)
+      window.removeEventListener('resize', updateSize)
+      observer.disconnect()
+    }
   }, [])
 
   // Drag interaction events
@@ -472,8 +543,9 @@ export const WorldGlobe = () => {
       onTouchEnd={handleMouseUpOrLeave}
       style={{
         position: 'relative',
-        width: '500px',
-        height: '500px',
+        width: '100%',
+        maxWidth: '500px',
+        aspectRatio: '1/1',
         margin: '0 auto',
         userSelect: 'none',
         cursor: dragRef.current.isDragging ? 'grabbing' : 'grab'
@@ -483,7 +555,8 @@ export const WorldGlobe = () => {
 
       {/* Floating Glassmorphic HTML Labels */}
       {projectedPins.map((pin, idx) => {
-        const leftSide = pin.x < 250
+        const centerX = canvasRef.current ? canvasRef.current.clientWidth / 2 : 250
+        const leftSide = pin.x < centerX
         const boxX = leftSide ? pin.x - 145 : pin.x + 18
         const boxY = pin.y - 15
 

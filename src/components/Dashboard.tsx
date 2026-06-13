@@ -12,6 +12,17 @@ import { ClientInstructions } from './dashboard/ClientInstructions'
 import { SupportChat } from './dashboard/SupportChat'
 import { useMouseGlow } from '../hooks/useMouseGlow'
 
+/**
+ * Личный кабинет пользователя (Dashboard).
+ * 
+ * Логика работы:
+ * 1. Получает `token` из URL-параметров (например, `/cabinet/:token`).
+ * 2. Передает токен хуку `useDashboardData` для загрузки подписок, профиля и рефералов из Supabase.
+ * 3. Содержит обработчики выполнения Telegram Квестов (привязка бота и подписка на канал):
+ *    - Запускает редирект на Telegram бот / канал.
+ *    - Вызывает RPC-функции базы данных `claim_tg_bot_bonus` и `claim_tg_channel_bonus` для начисления дней подписки (+10 дней).
+ * 4. Компонует карточку подписки, форму активации промокодов, реферальную программу и инструкции к клиентам.
+ */
 export default function Dashboard() {
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()

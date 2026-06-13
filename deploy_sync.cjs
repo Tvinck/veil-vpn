@@ -2,18 +2,54 @@ const { Client } = require('ssh2');
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * Скрипт автоматизированного деплоя службы синхронизации и бота на удаленный VPS (deploy_sync.cjs).
+ * 
+ * Назначение:
+ * 1. Устанавливает SSH-соединение с целевым сервером по протоколу SFTP.
+ * 2. Копирует локальные исполняемые файлы (`sync.js`, `.env`, `bot.js`) в соответствующие директории на VPS (`/opt/bazzar-sync`, `/root/veil-vpn-bot/tg-bot`).
+ * 3. Генерирует удаленный `package.json` и запускает удаленную установку npm-зависимостей.
+ * 4. Регистрирует и перезапускает процессы в менеджере задач PM2 (`bazzar-sync`, `veil-bot`).
+ * 5. Ждет стабилизации процессов и выводит последние строки логов PM2.
+ * 
+ * ⚠️ КРИТИЧЕСКАЯ УЯЗВИМОСТЬ БЕЗОПАСНОСТИ:
+ * Данные доступа SSH_CONFIG (пароль root-пользователя) зашиты в коде скрипта в открытом виде.
+ * Рекомендуется вынести эти данные в переменные окружения (.env) или использовать авторизацию по SSH-ключам.
+ */
 // Локальные пути к файлам
 const SYNC_FILE = path.resolve(__dirname, 'tg-bot/sync.js');
 const SYNC_ENV  = path.resolve(__dirname, '.env');
 const BOT_FILE  = path.resolve(__dirname, 'tg-bot/bot.js');
 const BOT_ENV   = path.resolve(__dirname, 'tg-bot/.env');
 
+// Загружаем переменные окружения из локального .env файла
+const envPath = path.resolve(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  envContent.split(/\r?\n/).forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx > 0) {
+        const key = trimmed.slice(0, eqIdx).trim();
+        const val = trimmed.slice(eqIdx + 1).trim().replace(/^['"]|['"]$/g, '');
+        process.env[key] = val;
+      }
+    }
+  });
+}
+
 const SSH_CONFIG = {
-  host: '185.142.99.185',
-  port: 22,
-  username: 'root',
-  password: 'iW@Bz+,dM42Ln+'
+  host: process.env.SSH_HOST || '185.142.99.185',
+  port: parseInt(process.env.SSH_PORT || '22', 10),
+  username: process.env.SSH_USER || 'root',
+  password: process.env.SSH_PASS
 };
+
+if (!SSH_CONFIG.password) {
+  console.error('❌ Ошибка: В файле .env отсутствует переменная SSH_PASS с паролем от сервера.');
+  process.exit(1);
+}
 
 const SYNC_REMOTE_DIR = '/opt/bazzar-sync';
 const BOT_REMOTE_DIR  = '/root/veil-vpn-bot/tg-bot';

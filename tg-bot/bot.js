@@ -7,21 +7,24 @@ dotenv.config()
 
 /**
  * Инициализация Telegram-бота и Supabase клиента.
- * Подключаемся к единой БД Connect.
+ * Бот подключается к общей базе данных Connect.
  */
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN)
 
-// Подключаем middleware для хранения состояний сессий (в оперативной памяти)
+// Подключаем middleware для хранения состояний сессий поддержки в оперативной памяти
 bot.use(session({ defaultSession: () => ({ support_mode: false }) }))
 
-const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY, {
+const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY, {
   auth: { persistSession: false },
   realtime: { transport: ws }
 })
 
 /**
  * Утилита для форматирования объема трафика.
- * Преобразует байты в гигабайты.
+ * Преобразует байты в гигабайты с округлением.
+ * 
+ * @param {number|null} bytes - Лимит трафика в байтах
+ * @returns {string} Читаемый лимит трафика
  */
 const formatTraffic = (bytes) => {
   if (bytes === null || bytes === 0) return 'Безлимит'
@@ -30,8 +33,15 @@ const formatTraffic = (bytes) => {
 
 /**
  * Обработчик команды /start.
- * - Если передан payload (токен привязки), бот привязывает Telegram к подписке пользователя в БД.
- * - Иначе ищет подписку по telegram_username и автоматически привязывает её.
+ * 
+ * Логика работы:
+ * 1. Если запущен по реферальной ссылке из кабинета Connect (содержит startPayload токен):
+ *    - Извлекает подписку по токену.
+ *    - Привязывает telegram_username, telegram_chat_id и выставляет флаг tg_bot_linked.
+ * 2. Если запущен без токена:
+ *    - Пытается найти подписки по telegram_chat_id или telegram_username.
+ *    - Автоматически привязывает chat_id, если найдено совпадение только по username.
+ * 3. Если подписок нет, предлагает перейти на сайт для регистрации.
  */
 bot.start(async (ctx) => {
   if (ctx.session) {
@@ -43,7 +53,7 @@ bot.start(async (ctx) => {
     const tgUser = ctx.from
     
     if (startPayload) {
-      // 1. Попытка привязки аккаунта по токену подписки
+      // 1. Попытка привязки аккаунта по переданному токену подписки
       const { data: sub, error: subError } = await supabase
         .from('vpn_subscriptions')
         .select('*')
@@ -55,7 +65,7 @@ bot.start(async (ctx) => {
       }
 
       if (sub) {
-        // Обновляем чат-ID и имя пользователя для отправки уведомлений
+        // Обновляем chat_id и username в БД для доставки уведомлений
         const { error: updateError } = await supabase
           .from('vpn_subscriptions')
           .update({
@@ -81,14 +91,14 @@ bot.start(async (ctx) => {
       }
     }
 
-    // 2. Если токена нет, пробуем найти подписку по chat_id или username
+    // 2. Поиск по chat_id или юзернейму, если запуск пустой
     const { data: existingSubs } = await supabase
       .from('vpn_subscriptions')
       .select('*')
       .or(`telegram_chat_id.eq.${tgUser.id}${tgUser.username ? ',telegram_username.eq.' + tgUser.username : ''}`)
 
     if (existingSubs && existingSubs.length > 0) {
-      // Если нашли по username, но chat_id не был привязан — привязываем автоматически
+      // Авто-привязка chat_id для нелинкованных совпадений по юзернейму
       const unlinked = existingSubs.filter(s => !s.telegram_chat_id)
       for (const s of unlinked) {
         await supabase
@@ -105,10 +115,10 @@ bot.start(async (ctx) => {
         ]).resize()
       })
     } else {
-      ctx.reply(`👋 Добро пожаловать в <b>Veil VPN</b>!\n\nВаш надежный проводник в свободный интернет.\n\nЕсли у вас уже есть подписка, привяжите её, перейдя по ссылке личного кабинета, полученной от менеджера.`, {
+      ctx.reply(`👋 Добро пожаловать в <b>Veil Secure</b>!\n\nВаш надежный проводник в свободный интернет.\n\nЕсли у вас уже есть подписка, привяжите её, перейдя по ссылке личного кабинета, полученной от менеджера.`, {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard([
-          [Markup.button.url('Перейти на сайт', 'https://veilvpn.net/')]
+          [Markup.button.url('Перейти на сайт', 'https://veilvpn.net/')] // compliance note: keep external link
         ])
       })
     }
@@ -120,7 +130,7 @@ bot.start(async (ctx) => {
 
 /**
  * Обработчик кнопки "🛡 Мои подписки".
- * Выводит список подписок, привязанных к данному пользователю Telegram.
+ * Выводит список подписок, лимиты трафика, даты окончания и ключи доступа.
  */
 bot.hears('🛡 Мои подписки', async (ctx) => {
   if (ctx.session.support_mode) return
@@ -143,7 +153,7 @@ bot.hears('🛡 Мои подписки', async (ctx) => {
       return ctx.reply('У вас пока нет активных подписок. Свяжите аккаунт по ссылке из кабинета Connect.')
     }
 
-    // Автоматическая привязка chat_id, если найдено только по username
+    // Автоматическая привязка chat_id
     for (const s of subs) {
       if (!s.telegram_chat_id) {
         await supabase
@@ -201,7 +211,7 @@ bot.hears('💳 Продлить/Купить', (ctx) => {
 bot.hears('🌐 На сайт', (ctx) => {
   if (ctx.session.support_mode) return
   try {
-    ctx.reply('Нажмите на кнопку ниже, чтобы открыть сайт Veil VPN.', {
+    ctx.reply('Нажмите на кнопку ниже, чтобы открыть сайт Veil Secure.', {
       ...Markup.inlineKeyboard([
         [Markup.button.url('Перейти на сайт', 'https://veilvpn.net/')]
       ])
@@ -212,7 +222,8 @@ bot.hears('🌐 На сайт', (ctx) => {
 })
 
 /**
- * Обработчик кнопки "❓ Помощь" (Вход в режим техподдержки).
+ * Обработчик кнопки "❓ Помощь". Переводит чат в режим техподдержки,
+ * перенаправляя все текстовые сообщения сотрудникам CRM.
  */
 bot.hears('❓ Помощь', (ctx) => {
   if (ctx.session.support_mode) return
@@ -229,7 +240,7 @@ bot.hears('❓ Помощь', (ctx) => {
 })
 
 /**
- * Выход из режима поддержки.
+ * Выход из режима техподдержки.
  */
 bot.hears('❌ Завершить диалог', (ctx) => {
   try {
@@ -247,8 +258,9 @@ bot.hears('❌ Завершить диалог', (ctx) => {
 })
 
 /**
- * Универсальный обработчик входящих текстовых сообщений.
- * Сохраняет сообщения от пользователей в таблицу `support_messages` для отображения в CRM Connect.
+ * Универсальный обработчик входящих медиа- и текстовых сообщений.
+ * Все входящие сообщения поддержки сохраняются в таблицу `support_messages`
+ * и отображаются менеджеру в CRM Connect.
  */
 bot.on('message', async (ctx) => {
   try {
@@ -267,7 +279,7 @@ bot.on('message', async (ctx) => {
     const tgUser = ctx.from
     let messageText = ctx.message.text || ''
 
-    // Обработка медиафайлов (фото/скриншоты, файлы, голосовые сообщения)
+    // Обработка отправленных медиафайлов (фото/скриншоты, файлы, голосовые сообщения)
     if (ctx.message.photo) {
       const fileId = ctx.message.photo[ctx.message.photo.length - 1].file_id
       const fileUrlObj = await ctx.telegram.getFileLink(fileId)
@@ -302,7 +314,7 @@ bot.on('message', async (ctx) => {
       return ctx.reply('Сначала привяжите аккаунт, перейдя по ссылке из кабинета Connect, чтобы задавать вопросы поддержке.')
     }
 
-    // Авто-привязываем chat_id
+    // Авто-привязываем chat_id, если он не был сохранен
     if (!sub.telegram_chat_id) {
       await supabase
         .from('vpn_subscriptions')
@@ -310,11 +322,12 @@ bot.on('message', async (ctx) => {
         .eq('id', sub.id)
     }
 
+    // Отправляем сообщение в CRM
     const { error: insertError } = await supabase.from('support_messages').insert({
-      user_id: sub.id, // Идентификатор подписки
+      user_id: sub.id,
       message: messageText,
       is_from_user: true,
-      project: 'Veil VPN'
+      project: 'Veil Secure'
     })
 
     if (insertError) {
@@ -322,7 +335,6 @@ bot.on('message', async (ctx) => {
       return ctx.reply('Не удалось отправить сообщение. Попробуйте позже.')
     }
     
-    // Подтверждение только при первом сообщении в рамках сессии
     if (!ctx.session.support_greeted) {
       ctx.session.support_greeted = true
       ctx.reply('Ваш вопрос получен! Вы можете продолжать писать сообщения сюда. Чтобы выйти из чата, нажмите кнопку ниже.', {
@@ -337,15 +349,15 @@ bot.on('message', async (ctx) => {
 })
 
 /**
- * Подписка на Realtime-события из БД (ответы техподдержки).
- * Если сотрудник ответил из панели `connect`, бот пересылает это сообщение пользователю.
+ * Подписка на Realtime-изменения таблицы `support_messages` в Supabase.
+ * При отправке ответа сотрудником из панели CRM, бот перенаправляет сообщение пользователю в Telegram.
  */
 supabase
   .channel('support_messages_channel')
   .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages' }, async (payload) => {
     try {
       const msg = payload.new
-      // Реагируем только на ответы от сотрудника
+      // Реагируем только на ответы от сотрудника (is_from_user = false)
       if (!msg.is_from_user) {
         const { data: sub } = await supabase
           .from('vpn_subscriptions')
@@ -365,11 +377,11 @@ supabase
 
 // Запуск бота
 bot.launch().then(() => {
-  console.log('Veil VPN Telegram Bot is running on Connect DB!')
+  console.log('Veil Secure Telegram Bot is running on Connect DB!')
 }).catch(err => {
   console.error('Ошибка при запуске бота:', err)
 })
 
-// Корректное завершение работы
+// Корректное завершение процессов бота
 process.once('SIGINT', () => bot.stop('SIGINT'))
 process.once('SIGTERM', () => bot.stop('SIGTERM'))

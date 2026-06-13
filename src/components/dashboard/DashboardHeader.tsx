@@ -2,6 +2,14 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Send } from 'lucide-react'
 import { VeilLogo } from '../ui/VeilLogo'
 
+/**
+ * Верхняя навигационная панель личного кабинета (DashboardHeader).
+ * 
+ * Отображает:
+ * 1. Кнопку возврата на главную страницу лендинга.
+ * 2. Фирменный логотип проекта (Veil.Net).
+ * 3. Быструю ссылку на Telegram-бот технической поддержки.
+ */
 export const DashboardHeader = () => {
   const navigate = useNavigate()
 

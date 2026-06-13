@@ -3,6 +3,18 @@ import { MessageSquare, X, Send } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { motion, AnimatePresence } from 'framer-motion'
 
+/**
+ * Компонент окна чата техподдержки (SupportChat).
+ * 
+ * Особенности:
+ * 1. Загружает историю сообщений пользователя из таблицы `support_messages` Supabase.
+ * 2. Слушает входящие ответы операторов поддержки в реальном времени с помощью
+ *    Supabase Realtime PostgreSQL Changes канала, фильтруя изменения по `user_id`.
+ * 3. Позволяет отправлять сообщения напрямую в БД с указанием названия проекта.
+ * 
+ * @param {object} props - Параметры компонента
+ * @param {string} props.profileId - UUID профиля пользователя для связи сообщений
+ */
 export const SupportChat = ({ profileId }: { profileId: string }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<any[]>([])
@@ -67,18 +79,19 @@ export const SupportChat = ({ profileId }: { profileId: string }) => {
       user_id: profileId,
       is_from_user: true,
       message: msgText,
-      project: 'Veil VPN',
+      project: 'Veil Secure', // Обновлено: нейтральное имя проекта во избежание блокировок
       created_at: new Date().toISOString()
     }
     setMessages(prev => [...prev, tempMsg])
 
+    // Вставка сообщения техподдержки в Supabase
     const { error } = await supabase
       .from('support_messages')
       .insert({
         user_id: profileId,
         is_from_user: true,
         message: msgText,
-        project: 'Veil VPN'
+        project: 'Veil Secure'
       })
 
     if (error) {

@@ -9,6 +9,16 @@ interface Props {
   allSubscriptions: Subscription[]
 }
 
+/**
+ * Карточка подписки пользователя (SubscriptionCard).
+ * 
+ * Особенности:
+ * 1. Отображает основную информацию о профиле: имя пользователя, привязанный Telegram.
+ * 2. Выводит вкладки для быстрого переключения между доступными подписками пользователя (мультиподписка).
+ * 3. Показывает статус активности подписки (дней осталось, дата окончания) и прогресс-бар израсходованного трафика.
+ * 
+ * @param {Props} props - Параметры компонента
+ */
 export const SubscriptionCard = ({ profile, subscription, allSubscriptions }: Props) => {
   const navigate = useNavigate()
   const glow = useMouseGlow()

@@ -10,6 +10,16 @@ interface Props {
   fetchUserData: () => Promise<void>
 }
 
+/**
+ * Карточка продления подписки по кодам активации (ActivationCard).
+ * 
+ * Логика работы:
+ * 1. Получает промокод от пользователя.
+ * 2. Вызывает Supabase RPC-функцию `activate_promo_code` с токеном подписки и кодом.
+ * 3. При успешном выполнении вызывает `fetchUserData` для обновления баланса/срока действия в UI.
+ * 
+ * @param {Props} props - Параметры компонента
+ */
 export const ActivationCard = ({ subscription, fetchUserData }: Props) => {
   const navigate = useNavigate()
   const glow = useMouseGlow()
