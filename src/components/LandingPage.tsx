@@ -9,7 +9,8 @@ import { Badge } from './landing/Badge'
 import { Pricing } from './landing/Pricing'
 import { Reviews } from './landing/Reviews'
 import { TiltCard } from './ui/TiltCard'
-import { BentoWave, BentoGlassStar, BentoGear } from './ui/BentoVisuals'
+import { BentoWave, BentoGlassStar, BentoGear, BentoTorus } from './ui/BentoVisuals'
+import { useMouseGlow } from '../hooks/useMouseGlow'
 
 const containerVariants = {
   hidden: {},
@@ -72,6 +73,7 @@ const listItem = {
 export default function LandingPage() {
   const navigate = useNavigate()
   const [isLoginOpen, setIsLoginOpen] = useState(false)
+  const ctaGlow = useMouseGlow()
   const [accessLink, setAccessLink] = useState('')
   const [loginError, setLoginError] = useState<string | null>(null)
   const [loginSuccess, setLoginSuccess] = useState(false)
@@ -499,24 +501,48 @@ export default function LandingPage() {
 
       {/* ── CTA BANNER ── */}
       <section style={{ padding: '0 8% 100px' }}>
-        <div className="sec-cta-banner" style={{ background: 'linear-gradient(135deg, #0d0d16 0%, #06060c 100%)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '32px', padding: '60px' }}>
-          <div style={{ position: 'absolute', right: '15%', top: 0, bottom: 0, width: '320px',
-            background: 'radial-gradient(circle, rgba(230,57,80,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div 
+          {...ctaGlow}
+          className="glow-card-cyber sec-cta-banner" 
+          style={{ 
+            ...ctaGlow.style,
+            background: 'rgba(10, 12, 26, 0.65)', 
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.06)', 
+            borderRadius: '32px', 
+            padding: '60px',
+            overflow: 'hidden',
+            transition: 'transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease'
+          }}
+        >
+          {/* 3D wireframe torus in background (spline.design style) */}
+          <BentoTorus />
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative', zIndex: 1 }}>
-            <h2 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 900, fontFamily: 'var(--font-title)', lineHeight: 1.25 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative', zIndex: 3 }}>
+            <h2 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 900, fontFamily: 'var(--font-title)', lineHeight: 1.25, color: '#fff', letterSpacing: '-1px' }}>
               Получите надежный доступ<br />к информации без ограничений
             </h2>
             <p style={{ fontSize: '0.96rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.65, maxWidth: '500px' }}>
               Присоединяйтесь к проекту Veil от BAZZAR GROUP. Ваши личные данные защищены шифрованием, а сетевой профиль гарантирует стабильную скорость соединения.
             </p>
             <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-              <button className="btn-cyan" onClick={() => navigate('/checkout')}>
+              <motion.button 
+                whileHover={{ scale: 1.05, boxShadow: '0 0 25px rgba(0, 240, 255, 0.4)' }}
+                whileTap={{ scale: 0.95 }}
+                className="btn-cyan" 
+                onClick={() => navigate('/checkout')}
+              >
                 Настроить профиль <ArrowRight size={15} />
-              </button>
-              <button className="btn-ghost" onClick={() => setIsLoginOpen(true)}>
+              </motion.button>
+              <motion.button 
+                whileHover={{ scale: 1.05, background: 'rgba(255,255,255,0.08)' }}
+                whileTap={{ scale: 0.95 }}
+                className="btn-ghost" 
+                onClick={() => setIsLoginOpen(true)}
+              >
                 Личный кабинет
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>

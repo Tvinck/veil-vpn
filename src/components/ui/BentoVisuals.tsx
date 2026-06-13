@@ -449,3 +449,196 @@ export const BentoGear = () => {
     />
   )
 }
+
+// ─── CTA BANNER VISUAL: 3D WIREFRAME TORUS MESH ───
+export const BentoTorus = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const tiltRef = useRef({ x: 0, y: 0 })
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    let reqId: number
+    let width = 0
+    let height = 0
+
+    const resize = () => {
+      const parent = canvas.parentElement
+      if (!parent) return
+      width = parent.clientWidth
+      height = parent.clientHeight
+      canvas.width = width * window.devicePixelRatio
+      canvas.height = height * window.devicePixelRatio
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
+    }
+
+    resize()
+    window.addEventListener('resize', resize)
+
+    // Setup mouse hover tracking on parent CTA banner
+    const parent = canvas.closest('.sec-cta-banner')
+    const handleMouseMove = (e: Event) => {
+      const mouseEvent = e as MouseEvent
+      if (!parent) return
+      const rect = parent.getBoundingClientRect()
+      const x = mouseEvent.clientX - rect.left - rect.width / 2
+      const y = mouseEvent.clientY - rect.top - rect.height / 2
+      tiltRef.current.x = -y * 0.002 // Pitch
+      tiltRef.current.y = x * 0.002  // Yaw
+    }
+
+    const handleMouseLeave = () => {
+      tiltRef.current.x = 0
+      tiltRef.current.y = 0
+    }
+
+    if (parent) {
+      parent.addEventListener('mousemove', handleMouseMove)
+      parent.addEventListener('mouseleave', handleMouseLeave)
+    }
+
+    let time = 0
+    const R = 68  // Major radius
+    const r = 25  // Minor radius
+    const thetaSteps = 24
+    const phiSteps = 12
+
+    let currentTiltX = 0
+    let currentTiltY = 0
+
+    const render = () => {
+      ctx.clearRect(0, 0, width, height)
+      time += 0.008
+
+      // Interpolate tilts
+      currentTiltX += (tiltRef.current.x - currentTiltX) * 0.07
+      currentTiltY += (tiltRef.current.y - currentTiltY) * 0.07
+
+      const rotX = time * 0.4 + currentTiltX
+      const rotY = time * 0.6 + currentTiltY
+      const rotZ = time * 0.2
+
+      const cosX = Math.cos(rotX), sinX = Math.sin(rotX)
+      const cosY = Math.cos(rotY), sinY = Math.sin(rotY)
+      const cosZ = Math.cos(rotZ), sinZ = Math.sin(rotZ)
+
+      const perspective = 300
+      const centerX = width * 0.76 // Align torus to right side of CTA banner
+      const centerY = height * 0.50
+
+      // Helper to rotate 3D point
+      const rotate = (pt: { x: number; y: number; z: number }) => {
+        // Z-axis rotation
+        let x1 = pt.x * cosZ - pt.y * sinZ
+        let y1 = pt.y * cosZ + pt.x * sinZ
+        let z1 = pt.z
+
+        // Y-axis rotation
+        let x2 = x1 * cosY - z1 * sinY
+        let z2 = z1 * cosY + x1 * sinY
+        let y2 = y1
+
+        // X-axis rotation
+        let y3 = y2 * cosX - z2 * sinX
+        let z3 = z2 * cosX + y2 * sinX
+
+        return { x: x2, y: y3, z: z3 }
+      }
+
+      // Generate grid of points on the Torus
+      const mesh: { x: number; y: number; z: number }[][] = []
+      for (let t = 0; t < thetaSteps; t++) {
+        const theta = (t / thetaSteps) * Math.PI * 2
+        const ring: { x: number; y: number; z: number }[] = []
+        for (let p = 0; p < phiSteps; p++) {
+          const phi = (p / phiSteps) * Math.PI * 2
+          
+          const x = (R + r * Math.cos(phi)) * Math.cos(theta)
+          const y = (R + r * Math.cos(phi)) * Math.sin(theta)
+          const z = r * Math.sin(phi)
+
+          ring.push(rotate({ x, y, z }))
+        }
+        mesh.push(ring)
+      }
+
+      // Project points to 2D
+      const projMesh = mesh.map(ring => 
+        ring.map(pt => {
+          const scale = perspective / (perspective + pt.z)
+          const px = pt.x * scale + centerX
+          const py = pt.y * scale + centerY
+          return { x: px, y: py, z: pt.z }
+        })
+      )
+
+      // Draw wireframe segments with depth shading
+      // 1. Draw longitudinal lines connecting phi points
+      for (let t = 0; t < thetaSteps; t++) {
+        const nextT = (t + 1) % thetaSteps
+        for (let p = 0; p < phiSteps; p++) {
+          const nextP = (p + 1) % phiSteps
+
+          const p1 = projMesh[t][p]
+          const p2 = projMesh[nextT][p] // connection along major circle
+          const p3 = projMesh[t][nextP] // connection along minor circle
+
+          const avgZ1 = (p1.z + p2.z) / 2
+          const isBack1 = avgZ1 > 0
+          ctx.beginPath()
+          ctx.moveTo(p1.x, p1.y)
+          ctx.lineTo(p2.x, p2.y)
+          ctx.lineWidth = isBack1 ? 0.6 : 1.1
+          // Red-cyan wireframe gradient feel
+          ctx.strokeStyle = isBack1 
+            ? 'rgba(230, 57, 80, 0.05)' 
+            : 'rgba(0, 240, 255, 0.16)'
+          ctx.stroke()
+
+          const avgZ2 = (p1.z + p3.z) / 2
+          const isBack2 = avgZ2 > 0
+          ctx.beginPath()
+          ctx.moveTo(p1.x, p1.y)
+          ctx.lineTo(p3.x, p3.y)
+          ctx.lineWidth = isBack2 ? 0.6 : 1.1
+          ctx.strokeStyle = isBack2 
+            ? 'rgba(230, 57, 80, 0.05)' 
+            : 'rgba(168, 85, 247, 0.16)'
+          ctx.stroke()
+        }
+      }
+
+      reqId = requestAnimationFrame(render)
+    }
+
+    render()
+
+    return () => {
+      window.removeEventListener('resize', resize)
+      if (parent) {
+        parent.removeEventListener('mousemove', handleMouseMove)
+        parent.removeEventListener('mouseleave', handleMouseLeave)
+      }
+      cancelAnimationFrame(reqId)
+    }
+  }, [])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        zIndex: 0
+      }}
+    />
+  )
+}
+
