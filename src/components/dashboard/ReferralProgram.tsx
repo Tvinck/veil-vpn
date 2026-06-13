@@ -10,9 +10,10 @@ interface Props {
 export const ReferralProgram = ({ profile, friends }: Props) => {
   const [copiedRef, setCopiedRef] = useState(false)
 
+  const refLink = profile ? `${window.location.origin}/ref/${profile.username}` : ''
+
   const handleCopyRef = () => {
-    if (!profile) return
-    const refLink = `https://veilvpn.net/ref/${profile.username}`
+    if (!refLink) return
     navigator.clipboard.writeText(refLink)
     setCopiedRef(true)
     setTimeout(() => setCopiedRef(false), 2000)
@@ -24,12 +25,12 @@ export const ReferralProgram = ({ profile, friends }: Props) => {
         <div className="sec-dash-icon-box"><Gift size={20} color="#e63950" strokeWidth={2.5} /></div>
         <h3 className="sec-dash-title">Пригласить друга</h3>
       </div>
-      <p className="sec-dash-desc">Когда ваш друг зарегистрируется и купит любую подписку, вы оба получите 30 дней VPN бесплатно!</p>
+      <p className="sec-dash-desc">Когда ваш друг зарегистрируется и купит любую подписку, вы оба получите 30 дней защищённого подключения бесплатно!</p>
 
       <div style={{ marginBottom: '20px' }}>
         <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Ваша ссылка:</span>
         <div className="sec-input-group">
-          <input type="text" readOnly value={`https://veilvpn.net/ref/${profile.username}`} className="sec-input" style={{ color: '#e63950' }} />
+          <input type="text" readOnly value={refLink} className="sec-input" style={{ color: '#e63950' }} />
           <button onClick={handleCopyRef} className="sec-input-btn">
             {copiedRef ? <Check size={16} color="#22c55e" /> : <Copy size={16} />}
           </button>

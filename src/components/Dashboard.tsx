@@ -46,7 +46,7 @@ export default function Dashboard() {
 
       if (success) {
         await fetchUserData()
-        setTgBonusMsg('Бот успешно запущен! Вам начислено +10 дней VPN.')
+        setTgBonusMsg('Бот успешно запущен! Вам начислено +10 дней к подписке.')
       } else {
         setTgBonusMsg('Бонус уже был получен ранее.')
       }
@@ -76,7 +76,7 @@ export default function Dashboard() {
 
       if (success) {
         await fetchUserData()
-        setTgBonusMsg('Вы подписались на канал! Начислено +10 дней VPN.')
+        setTgBonusMsg('Вы подписались на канал! Начислено +10 дней к подписке.')
       } else {
         setTgBonusMsg('Бонус уже был получен ранее.')
       }
@@ -93,11 +93,11 @@ export default function Dashboard() {
   // 1. LOADING VIEW
   if (loading) {
     return (
-      <div className="sec-dash-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
-          <Loader2 size={48} className="animate-spin" color="#e63950" />
-          <h3 style={{ fontFamily: 'var(--font-cyber)', color: '#fff', fontSize: '1.2rem', letterSpacing: '1px' }}>
-            СИНХРОНИЗАЦИЯ...
+      <div className="sec-dash-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#030307' }}>
+        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+          <Loader2 size={44} className="animate-spin" color="#e63950" />
+          <h3 style={{ fontFamily: 'var(--font-cyber)', color: '#fff', fontSize: '1.05rem', letterSpacing: '2px', fontWeight: 800 }}>
+            СИНХРОНИЗАЦИЯ ПРОФИЛЯ...
           </h3>
         </div>
       </div>
@@ -107,13 +107,15 @@ export default function Dashboard() {
   // 2. ERROR VIEW
   if (errorMsg || !profile || !subscription) {
     return (
-      <div className="sec-dash-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="sec-dash-card" style={{ maxWidth: '480px', textAlign: 'center', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-          <Info size={40} color="#e63950" style={{ margin: '0 auto 20px' }} />
-          <h3 style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 900, marginBottom: '16px' }}>Ошибка доступа</h3>
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginBottom: '28px' }}>{errorMsg || 'Не удалось загрузить данные личного кабинета.'}</p>
-          <button className="btn-red-primary" onClick={() => navigate('/')} style={{ width: '100%', justifyContent: 'center' }}>
-            <ArrowLeft size={16} /> Вернуться на главную
+      <div className="sec-dash-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#030307', padding: '20px' }}>
+        <div className="sec-dash-card" style={{ maxWidth: '480px', width: '100%', textAlign: 'center', border: '1px solid rgba(230,57,80,0.25)', padding: '40px 30px', borderRadius: '24px', background: 'rgba(255,255,255,0.01)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+          <Info size={44} color="#e63950" style={{ margin: '0 auto 24px' }} />
+          <h3 style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 900, marginBottom: '14px', fontFamily: 'var(--font-title)' }}>Ошибка доступа</h3>
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', marginBottom: '28px', lineHeight: 1.5 }}>
+            {errorMsg || 'Не удалось загрузить данные личного кабинета.'}
+          </p>
+          <button className="btn-red-primary" onClick={() => navigate('/')} style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ArrowLeft size={16} /> На главную страницу
           </button>
         </div>
       </div>
@@ -121,20 +123,20 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="sec-dash-container">
+    <div className="sec-dash-container" style={{ background: '#030307', minHeight: '100vh' }}>
       <div className="sec-dash-ambient-1"></div>
       <div className="sec-dash-ambient-2"></div>
 
       <DashboardHeader />
 
-      <main className="sec-dash-main">
+      <main className="sec-dash-main" style={{ padding: '40px 8%', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
         <SubscriptionCard 
           profile={profile} 
           subscription={subscription} 
           allSubscriptions={allSubscriptions} 
         />
 
-        <div className="sec-dash-grid">
+        <div className="sec-dash-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px', marginTop: '32px', marginBottom: '48px' }}>
           <ActivationCard 
             subscription={subscription} 
             fetchUserData={fetchUserData} 
@@ -145,40 +147,52 @@ export default function Dashboard() {
             friends={friends} 
           />
 
-          {/* Quests */}
-          <div className="sec-dash-card">
-            <div className="sec-dash-card-header">
-              <div className="sec-dash-icon-box"><Send size={20} color="#e63950" strokeWidth={2.5} /></div>
-              <h3 className="sec-dash-title">Квесты Telegram</h3>
+          {/* Quests Card */}
+          <div className="sec-dash-card" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '28px' }}>
+            <div className="sec-dash-card-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div className="sec-dash-icon-box" style={{ background: 'rgba(230,57,80,0.12)', width: '38px', height: '38px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Send size={18} color="#e63950" strokeWidth={2.5} />
+              </div>
+              <h3 className="sec-dash-title" style={{ color: '#fff', fontSize: '1.15rem', fontWeight: 800 }}>Квесты Telegram</h3>
             </div>
-            <p className="sec-dash-desc">Выполняйте задания и получайте бонусные дни бесплатного VPN на ваш счет моментально!</p>
+            <p className="sec-dash-desc" style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.45, marginBottom: '24px' }}>
+              Выполняйте задания в нашем боте и получайте дополнительные дни бесплатного подключения моментально на баланс!
+            </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div className={`sec-task-item ${profile.tg_bot_linked ? 'sec-task-item-done' : ''}`}>
-                <div className="sec-task-header">
-                  <h4 className="sec-task-title">Подключение бота</h4>
-                  <span className="sec-badge-red">+10 дней</span>
+              <div className={`sec-task-item ${profile.tg_bot_linked ? 'sec-task-item-done' : ''}`} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '14px', padding: '16px' }}>
+                <div className="sec-task-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <h4 className="sec-task-title" style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff' }}>Подключение бота</h4>
+                  <span className="sec-badge-red" style={{ fontSize: '0.72rem', background: 'rgba(230,57,80,0.15)', color: '#ff7085', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>+10 дней</span>
                 </div>
-                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.4 }}>Запустите нашего бота @Veil_Vps_bot. Он будет сообщать об окончании подписки и новых серверах.</p>
+                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.45, marginBottom: '12px' }}>
+                  Запустите нашего бота @Veil_Vps_bot. Он будет сообщать об окончании подписки и новых серверах.
+                </p>
                 {profile.tg_bot_linked ? (
-                  <div style={{ color: '#e63950', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}><Check size={14} /> Выполнено</div>
+                  <div style={{ color: '#22c55e', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Check size={14} /> Выполнено
+                  </div>
                 ) : (
-                  <button onClick={handleLinkBot} disabled={linkingBot} className="btn-ghost-cta" style={{ padding: '8px 14px', fontSize: '0.8rem', justifyContent: 'center' }}>
+                  <button onClick={handleLinkBot} disabled={linkingBot} className="btn-ghost-cta" style={{ padding: '8px 14px', fontSize: '0.8rem', justifyContent: 'center', width: 'fit-content' }}>
                     {linkingBot ? <Loader2 size={14} className="animate-spin" /> : 'Запустить бота'}
                   </button>
                 )}
               </div>
 
-              <div className={`sec-task-item ${profile.tg_channel_subscribed ? 'sec-task-item-done' : ''}`}>
-                <div className="sec-task-header">
-                  <h4 className="sec-task-title">Подписка на канал</h4>
-                  <span className="sec-badge-red">+10 дней</span>
+              <div className={`sec-task-item ${profile.tg_channel_subscribed ? 'sec-task-item-done' : ''}`} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '14px', padding: '16px' }}>
+                <div className="sec-task-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <h4 className="sec-task-title" style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff' }}>Подписка на канал</h4>
+                  <span className="sec-badge-red" style={{ fontSize: '0.72rem', background: 'rgba(230,57,80,0.15)', color: '#ff7085', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>+10 дней</span>
                 </div>
-                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.4 }}>Подпишитесь на наш закрытый новостной канал. Будьте в курсе акций и обновлений приложения.</p>
+                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.45, marginBottom: '12px' }}>
+                  Подпишитесь на наш закрытый новостной канал. Будьте в курсе акций и обновлений приложения.
+                </p>
                 {profile.tg_channel_subscribed ? (
-                  <div style={{ color: '#e63950', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}><Check size={14} /> Выполнено</div>
+                  <div style={{ color: '#22c55e', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Check size={14} /> Выполнено
+                  </div>
                 ) : (
-                  <button onClick={handleSubscribeChannel} disabled={subscribingChannel} className="btn-ghost-cta" style={{ padding: '8px 14px', fontSize: '0.8rem', justifyContent: 'center' }}>
+                  <button onClick={handleSubscribeChannel} disabled={subscribingChannel} className="btn-ghost-cta" style={{ padding: '8px 14px', fontSize: '0.8rem', justifyContent: 'center', width: 'fit-content' }}>
                     {subscribingChannel ? <Loader2 size={14} className="animate-spin" /> : 'Подписаться'}
                   </button>
                 )}
@@ -186,7 +200,9 @@ export default function Dashboard() {
             </div>
             
             {tgBonusMsg && (
-              <div style={{ color: '#22c55e', fontSize: '0.85rem', marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}><Check size={16} /> {tgBonusMsg}</div>
+              <div style={{ color: '#22c55e', fontSize: '0.85rem', marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(34,197,94,0.1)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(34,197,94,0.2)' }}>
+                <Check size={16} /> {tgBonusMsg}
+              </div>
             )}
           </div>
         </div>

@@ -55,15 +55,17 @@ export const SubscriptionCard = ({ profile, subscription, allSubscriptions }: Pr
   const trafficLimitFormatted = subscription.traffic_limit ? formatTraffic(trafficLimitBytes) : 'Безлимитно'
   const trafficPercent = trafficLimitBytes > 0 ? Math.min(100, Math.round((trafficUsedBytes / trafficLimitBytes) * 100)) : 12
 
+  const red = '#e63950'
+
   return (
-    <div className="sec-profile-card">
-      <div className="sec-profile-header">
-        <div className="sec-profile-avatar">
-          <User size={28} color="#e63950" strokeWidth={2.5} />
+    <div className="sec-profile-card" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '30px' }}>
+      <div className="sec-profile-header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div className="sec-profile-avatar" style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(230,57,80,0.1)', border: '1px solid rgba(230,57,80,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <User size={24} color="#e63950" strokeWidth={2.5} />
         </div>
         <div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', fontFamily: 'var(--font-title)' }}>{profile.username}</h2>
-          <p style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>
+          <p style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.45)', marginTop: '4px' }}>
             Telegram: {profile.telegram_username ? `@${profile.telegram_username}` : 'не привязан'}
           </p>
         </div>
@@ -71,10 +73,10 @@ export const SubscriptionCard = ({ profile, subscription, allSubscriptions }: Pr
 
       {/* Multi-Subscription Tabs */}
       {allSubscriptions.length > 1 && (
-        <div style={{ marginTop: '24px', marginBottom: '28px', background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.03)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: '#fff', fontWeight: 700, marginBottom: '16px' }}>
-            <Key size={16} color="#e63950" />
-            <span>Ваши ключи доступа</span>
+        <div style={{ marginTop: '24px', marginBottom: '28px', background: 'rgba(0,0,0,0.15)', padding: '16px', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.03)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: '#fff', fontWeight: 800, marginBottom: '14px', textTransform: 'uppercase', fontFamily: 'var(--font-cyber)', letterSpacing: '0.5px' }}>
+            <Key size={14} color="#e63950" />
+            <span>Ваши профили подключения</span>
           </div>
           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }} className="hide-scrollbar">
             {allSubscriptions.map((s, index) => {
@@ -84,10 +86,10 @@ export const SubscriptionCard = ({ profile, subscription, allSubscriptions }: Pr
               return (
                 <button
                   key={s.id}
-                  onClick={() => { if (!isActive) navigate(`/${s.token}`) }}
+                  onClick={() => { if (!isActive) navigate(`/cabinet/${s.token}`) }}
                   style={{
-                    padding: '12px 16px',
-                    background: isActive ? 'linear-gradient(135deg, rgba(230,57,80,0.15), rgba(230,57,80,0.02))' : 'rgba(255,255,255,0.02)',
+                    padding: '12px 18px',
+                    background: isActive ? 'linear-gradient(135deg, rgba(230,57,80,0.15), rgba(230,57,80,0.02))' : 'rgba(255,255,255,0.01)',
                     border: `1px solid ${isActive ? 'rgba(230,57,80,0.5)' : 'rgba(255,255,255,0.06)'}`,
                     borderRadius: '14px',
                     color: isActive ? '#fff' : 'rgba(255,255,255,0.5)',
@@ -96,14 +98,12 @@ export const SubscriptionCard = ({ profile, subscription, allSubscriptions }: Pr
                     alignItems: 'flex-start',
                     gap: '6px',
                     cursor: isActive ? 'default' : 'pointer',
-                    minWidth: '140px',
+                    minWidth: '150px',
                     boxShadow: isActive ? '0 0 20px rgba(230,57,80,0.15)' : 'none',
                     transition: 'all 0.2s',
                     position: 'relative',
                     overflow: 'hidden'
                   }}
-                  onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)' } }}
-                  onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)' } }}
                 >
                   {isActive && (
                     <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: '#e63950', boxShadow: '0 0 10px #e63950' }} />
@@ -122,49 +122,49 @@ export const SubscriptionCard = ({ profile, subscription, allSubscriptions }: Pr
         </div>
       )}
 
-      <div className="sec-profile-stats">
-        <div className="sec-stat-box">
-          <span className="sec-stat-label">Имя пользователя</span>
-          <span className="sec-stat-val">{profile.username}</span>
+      <div className="sec-profile-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '24px', marginBottom: '24px' }}>
+        <div className="sec-stat-box" style={{ border: '1px solid rgba(255,255,255,0.04)', borderRadius: '16px', padding: '16px', background: 'rgba(255,255,255,0.01)' }}>
+          <span className="sec-stat-label" style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '6px' }}>Имя пользователя</span>
+          <span className="sec-stat-val" style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>{profile.username}</span>
         </div>
 
-        <div className="sec-stat-box">
-          <span className="sec-stat-label">Статус</span>
+        <div className="sec-stat-box" style={{ border: '1px solid rgba(255,255,255,0.04)', borderRadius: '16px', padding: '16px', background: 'rgba(255,255,255,0.01)' }}>
+          <span className="sec-stat-label" style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '6px' }}>Статус подключения</span>
           {subscription.status === 'active' && activeDays > 0 ? (
-            <span className="sec-stat-val" style={{ color: '#22c55e' }}>
+            <span className="sec-stat-val" style={{ color: '#22c55e', fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 10px #22c55e' }}></span>
-              Активна ({activeDays} дн.)
+              Активно ({activeDays} дн.)
             </span>
           ) : (
-            <span className="sec-stat-val" style={{ color: '#ef4444' }}>
+            <span className="sec-stat-val" style={{ color: '#ef4444', fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 10px #ef4444' }}></span>
-              Истекла
+              Истекло
             </span>
           )}
         </div>
 
-        <div className="sec-stat-box" style={{ borderColor: subscription.status === 'active' && activeDays > 0 ? 'rgba(255,255,255,0.06)' : 'rgba(239, 68, 68, 0.3)', background: subscription.status === 'active' && activeDays > 0 ? 'rgba(255,255,255,0.02)' : 'rgba(239, 68, 68, 0.05)' }}>
-          <span className="sec-stat-label">Истекает</span>
-          <span className="sec-stat-val" style={{ color: subscription.status === 'active' && activeDays > 0 ? '#fff' : '#ef4444' }}>
+        <div className="sec-stat-box" style={{ border: `1px solid ${subscription.status === 'active' && activeDays > 0 ? 'rgba(255,255,255,0.04)' : 'rgba(239, 68, 68, 0.25)'}`, borderRadius: '16px', padding: '16px', background: subscription.status === 'active' && activeDays > 0 ? 'rgba(255,255,255,0.01)' : 'rgba(239, 68, 68, 0.05)' }}>
+          <span className="sec-stat-label" style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '6px' }}>Истекает</span>
+          <span className="sec-stat-val" style={{ fontSize: '1.1rem', fontWeight: 800, color: subscription.status === 'active' && activeDays > 0 ? '#fff' : '#ef4444' }}>
             {expiryDate}
           </span>
         </div>
 
-        <div className="sec-stat-box" style={{ borderColor: 'rgba(230, 57, 80, 0.3)', background: 'rgba(230, 57, 80, 0.04)' }}>
-          <span className="sec-stat-label">Трафик</span>
-          <span className="sec-stat-val" style={{ color: '#e63950' }}>
+        <div className="sec-stat-box" style={{ border: '1px solid rgba(230, 57, 80, 0.25)', borderRadius: '16px', padding: '16px', background: 'rgba(230, 57, 80, 0.03)' }}>
+          <span className="sec-stat-label" style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '6px' }}>Объем трафика</span>
+          <span className="sec-stat-val" style={{ fontSize: '1.1rem', fontWeight: 800, color: '#e63950' }}>
             {trafficUsedFormatted} / {trafficLimitFormatted}
           </span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600 }}>
           <span>Расход: {trafficUsedFormatted}</span>
           <span>Лимит: {trafficLimitFormatted}</span>
         </div>
-        <div className="sec-traffic-bar-bg">
-          <div className="sec-traffic-bar-fill" style={{ width: `${trafficPercent}%` }}></div>
+        <div className="sec-traffic-bar-bg" style={{ background: 'rgba(255,255,255,0.03)', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
+          <div className="sec-traffic-bar-fill" style={{ width: `${trafficPercent}%`, background: red, height: '100%', boxShadow: '0 0 10px rgba(230,57,80,0.5)', borderRadius: '4px' }}></div>
         </div>
       </div>
     </div>

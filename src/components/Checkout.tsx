@@ -23,7 +23,7 @@ export default function Checkout() {
       name: 'Для роутера',
       desc: 'ХИТ ПРОДАЖ',
       price: 250,
-      features: ['Настройка на роутере', 'Все устройства дома', 'Обход блокировок ТВ']
+      features: ['Настройка на роутере', 'Все устройства дома', 'Работа на Smart TV']
     },
     {
       id: 2,
@@ -55,39 +55,39 @@ export default function Checkout() {
         <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(34, 197, 94, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', boxShadow: '0 0 30px rgba(34, 197, 94, 0.3)' }}>
           <Check size={40} color="#22c55e" strokeWidth={3} />
         </div>
-        <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-title)', color: '#fff', marginBottom: '16px' }}>Имитация оплаты прошла успешно!</h2>
+        <h2 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-title)', color: '#fff', marginBottom: '16px' }}>Оплата прошла успешно!</h2>
         <p style={{ color: 'rgba(255,255,255,0.6)', maxWidth: '400px', marginBottom: '32px', lineHeight: 1.6 }}>В реальной версии здесь будет происходить переадресация на платежный шлюз Т-Банка. Ваш ключ был бы отправлен на почту и в личный кабинет.</p>
-        <button className="btn-red-primary" onClick={() => navigate(-1)}>
-          Вернуться в личный кабинет
+        <button className="btn-red-primary" onClick={() => navigate('/')}>
+          Вернуться на главную
         </button>
       </div>
     )
   }
 
   return (
-    <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'relative', zIndex: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#030307' }}>
       {/* Header */}
       <header className="sec-dash-header mobile-wrap mobile-p-4">
         <button onClick={() => navigate(-1)} className="sec-dash-back-btn">
           <ArrowLeft size={16} />
-          <span className="mobile-hide">Вернуться назад</span>
+          <span className="mobile-hide">Назад на главную</span>
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ width: '34px', height: '34px', background: red, borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 18px rgba(230,57,80,0.55)' }}>
             <Shield size={18} color="#fff" strokeWidth={2.5} />
           </div>
           <span style={{ fontFamily: 'var(--font-cyber)', fontSize: '1.25rem', fontWeight: 900, letterSpacing: '2px', color: '#fff' }}>
-            VEIL<span style={{ color: red }}>VPN</span>
+            VEIL<span style={{ color: red }}>.NET</span>
           </span>
         </div>
         <div style={{ width: '150px' }} className="mobile-hide"></div> {/* Placeholder for centering logo on desktop */}
       </header>
 
-      <main className="sec-dash-main mobile-p-4" style={{ flexGrow: 1, maxWidth: '1000px' }}>
+      <main className="sec-dash-main mobile-p-4" style={{ flexGrow: 1, maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '60px 20px' }}>
         
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <h1 style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 900, fontFamily: 'var(--font-title)', color: '#fff' }}>
-            Оформление подписки
+            Оформление подключения
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '12px', fontSize: '1rem' }}>Выберите подходящий тариф и оплатите банковской картой</p>
         </div>
@@ -106,8 +106,8 @@ export default function Checkout() {
                   whileTap={{ scale: 0.99 }}
                   className="relative overflow-hidden"
                   style={{
-                    background: isSelected ? 'rgba(230,57,80,0.08)' : 'rgba(255,255,255,0.02)',
-                    border: `2px solid ${isSelected ? red : 'rgba(255,255,255,0.08)'}`,
+                    background: isSelected ? 'rgba(230,57,80,0.06)' : 'rgba(255,255,255,0.01)',
+                    border: `2px solid ${isSelected ? red : 'rgba(255,255,255,0.05)'}`,
                     borderRadius: '16px',
                     padding: '20px',
                     cursor: 'pointer',
@@ -137,7 +137,7 @@ export default function Checkout() {
                   </div>
                   
                   {isSelected && (
-                    <div style={{ borderTop: `1px solid rgba(230,57,80,0.2)`, paddingTop: '12px', marginTop: '4px', position: 'relative', zIndex: 1 }}>
+                    <div style={{ borderTop: `1px solid rgba(230,57,80,0.15)`, paddingTop: '12px', marginTop: '4px', position: 'relative', zIndex: 1 }}>
                       <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {plan.features.map((f, idx) => (
                           <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>
@@ -153,23 +153,23 @@ export default function Checkout() {
           </div>
 
           {/* Форма оплаты */}
-          <div className="sec-dash-card" style={{ height: 'fit-content' }}>
-            <div className="sec-dash-card-header">
-              <div className="sec-dash-icon-box" style={{ background: '#ffdd2d', boxShadow: '0 0 15px rgba(255,221,45,0.3)' }}>
-                <CreditCard size={20} color="#000" strokeWidth={2.5} />
+          <div className="sec-dash-card" style={{ height: 'fit-content', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '24px' }}>
+            <div className="sec-dash-card-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div className="sec-dash-icon-box" style={{ background: '#ffdd2d', width: '38px', height: '38px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px rgba(255,221,45,0.2)' }}>
+                <CreditCard size={18} color="#000" strokeWidth={2.5} />
               </div>
-              <h3 className="sec-dash-title" style={{ color: '#fff' }}>Оплата Т-Банк</h3>
+              <h3 className="sec-dash-title" style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 800 }}>Оплата Т-Банк</h3>
             </div>
             
-            <p className="sec-dash-desc" style={{ marginBottom: '24px' }}>
+            <p className="sec-dash-desc" style={{ marginBottom: '24px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>
               Безопасная оплата картой любого банка РФ через шлюз Т-Банка. Чек об оплате будет отправлен на вашу почту.
             </p>
 
             <form onSubmit={handlePayment} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', fontWeight: 600, marginBottom: '8px' }}>Email для получения чека</label>
-                <div className="sec-input-group">
-                  <div style={{ padding: '0 12px', display: 'flex', alignItems: 'center', color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRight: 'none', borderRadius: '10px 0 0 10px' }}>
+                <div className="sec-input-group" style={{ display: 'flex' }}>
+                  <div style={{ padding: '0 12px', display: 'flex', alignItems: 'center', color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRight: 'none', borderRadius: '10px 0 0 10px' }}>
                     <Mail size={16} />
                   </div>
                   <input 
@@ -179,12 +179,16 @@ export default function Checkout() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="sec-input" 
-                    style={{ borderRadius: '0 10px 10px 0', borderLeft: 'none', paddingLeft: '8px' }}
+                    style={{
+                      borderRadius: '0 10px 10px 0', borderLeft: 'none', paddingLeft: '8px',
+                      flexGrow: 1, padding: '12px', background: 'rgba(255,255,255,0.01)',
+                      border: '1px solid rgba(255,255,255,0.08)', color: '#fff', outline: 'none'
+                    }}
                   />
                 </div>
               </div>
 
-              <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)' }}>К оплате:</span>
                 <span style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'var(--font-cyber)', color: '#fff' }}>
                   {selectedPlan !== null ? plans.find(p => p.id === selectedPlan)?.price : 0} ₽
@@ -202,14 +206,22 @@ export default function Checkout() {
                   fontSize: '1.05rem',
                   background: '#ffdd2d',
                   color: '#000',
-                  boxShadow: '0 0 20px rgba(255,221,45,0.4)'
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 0 20px rgba(255,221,45,0.3)',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}
               >
                 {isProcessing ? <Loader2 size={20} className="animate-spin" /> : 'Перейти к оплате'}
               </button>
             </form>
             
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '20px', opacity: 0.5 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '20px', opacity: 0.4 }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>T-Pay</span>
               <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Mir Pay</span>
               <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>СБП</span>

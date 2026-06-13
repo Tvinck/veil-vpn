@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-/** URL адрес инстанса Supabase проекта Veil VPN */
+/** URL адрес инстанса Supabase проекта Veil */
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 /** Публичный анонимный API ключ для доступа к базе данных */
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY

@@ -15,7 +15,7 @@ export const DashboardHeader = () => {
           <Shield size={18} color="#fff" strokeWidth={2.5} />
         </div>
         <span style={{ fontFamily: 'var(--font-cyber)', fontSize: '1.25rem', fontWeight: 900, letterSpacing: '2px', color: '#fff' }}>
-          VEIL<span style={{ color: '#e63950' }}>VPN</span>
+          VEIL<span style={{ color: '#e63950' }}>.NET</span>
         </span>
       </div>
       <a href="https://t.me/Veil_Vps_bot" target="_blank" rel="noreferrer" style={{ color: 'rgba(255,255,255,0.6)', transition: 'color 0.2s' }} title="Поддержка в Telegram" onMouseEnter={e => e.currentTarget.style.color = '#e63950'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}>

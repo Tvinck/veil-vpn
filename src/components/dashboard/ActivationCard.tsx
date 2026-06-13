@@ -50,7 +50,7 @@ export const ActivationCard = ({ subscription, fetchUserData }: Props) => {
         <div className="sec-dash-icon-box"><Ticket size={20} color="#e63950" strokeWidth={2.5} /></div>
         <h3 className="sec-dash-title">Продлить подписку</h3>
       </div>
-      <p className="sec-dash-desc">Купили код продления (VPN-ключ) на сторонней площадке? Введите его ниже для мгновенной активации дней.</p>
+      <p className="sec-dash-desc">Купили код продления (ключ доступа) на сторонней площадке? Введите его ниже для мгновенной активации дней.</p>
 
       <form onSubmit={handleActivateCode} className="sec-input-group" style={{ marginBottom: '16px' }}>
         <input type="text" placeholder="VEIL-XXXXXX" value={activationCode} onChange={(e) => setActivationCode(e.target.value)} className="sec-input" />

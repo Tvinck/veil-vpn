@@ -10,19 +10,19 @@ export const Pricing = () => {
     {
       name: 'Базовый', desc: 'Идеально для смартфона',
       price: '150₽', period: '/мес',
-      features: ['Глобальная сеть серверов', 'Трафик без лимитов', '1 устройство', 'Поддержка 24/7', 'Высокая скорость'],
+      features: ['Глобальная сеть адресов', 'Трафик без лимитов', '1 устройство', 'Поддержка 24/7', 'Высокая скорость'],
       featured: false,
     },
     {
       name: 'Для роутера', desc: 'Для всей семьи',
       price: '250₽', period: '/мес', badge: 'ХИТ ПРОДАЖ',
-      features: ['Глобальная сеть серверов', 'Настройка на роутере', 'Все домашние устройства', 'Обход блокировок ТВ', 'Защита от утечек', 'Поддержка 24/7'],
+      features: ['Глобальная сеть адресов', 'Настройка на роутере', 'Все домашние устройства', 'Работа на Smart TV', 'Защита от утечек', 'Поддержка 24/7'],
       featured: true,
     },
     {
       name: 'Всё вместе', desc: 'Максимум возможностей',
       price: '400₽', period: '/мес',
-      features: ['Глобальная сеть серверов', 'Роутер + личные устройства', 'Шифрование военного класса', 'Обход любых блокировок', 'Защита от утечек', 'Приоритетная поддержка'],
+      features: ['Глобальная сеть адресов', 'Роутер + личные устройства', 'Надежное шифрование данных', 'Стабильная маршрутизация', 'Защита от утечек', 'Приоритетная поддержка'],
       featured: false,
     },
   ]
@@ -32,10 +32,10 @@ export const Pricing = () => {
 
   return (
     <section style={{ padding: '60px 6% 100px' }} id="pricing">
-      <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-        <Badge text="Простые тарифы · Максимальная защита" />
+      <div style={{ textShadow: 'none', textAlign: 'center', marginBottom: '56px' }}>
+        <Badge text="Простые тарифы · Надежное подключение" />
         <h2 style={{ marginTop: '18px', fontSize: 'clamp(1.8rem, 3.2vw, 2.5rem)', fontWeight: 900, fontFamily: 'var(--font-title)' }}>
-          Гибкие VPN-тарифы для каждого пользователя
+          Гибкие тарифные планы для каждого пользователя
         </h2>
       </div>
 
@@ -56,7 +56,7 @@ export const Pricing = () => {
               <span style={{ fontSize: '0.82rem', color: muted, fontWeight: 600 }}>{plan.period}</span>
             </div>
             <button className={plan.featured ? 'btn-red-primary' : 'btn-ghost-plan'}
-              onClick={() => navigate('/KUq0yqj3mW_T79on')} style={{ width: '100%', justifyContent: 'center' }}>
+              onClick={() => navigate('/checkout')} style={{ width: '100%', justifyContent: 'center' }}>
               Выбрать план →
             </button>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
