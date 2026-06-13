@@ -6,8 +6,6 @@ interface Props {
   subscription: Subscription
 }
 
-
-
 export const ClientInstructions = ({ subscription }: Props) => {
   const [selectedOS, setSelectedOS] = useState<OS>('iOS')
   const [selectedClient, setSelectedClient] = useState<ClientApp>('happ')
@@ -16,7 +14,7 @@ export const ClientInstructions = ({ subscription }: Props) => {
 
   const handleCopyKey = () => {
     if (!subscription) return
-    const subUrl = `https://veil-vpn-eta.vercel.app/api/sub?token=${subscription.token}`
+    const subUrl = `${window.location.origin}/api/sub?token=${subscription.token}`
     navigator.clipboard.writeText(subUrl)
     setCopiedKey(true)
     setTimeout(() => setCopiedKey(false), 2000)
@@ -27,7 +25,7 @@ export const ClientInstructions = ({ subscription }: Props) => {
       handleCopyKey()
     } else if (action === 'add_sub') {
       handleCopyKey()
-      alert('Ссылка скопирована! Откройте ваше VPN-приложение и выберите Добавить из буфера обмена (Import from Clipboard) или Импорт по URL.')
+      alert('Ссылка скопирована! Откройте ваше приложение подключения и выберите Добавить из буфера обмена (Import from Clipboard) или Импорт по URL.')
     } else if (action === 'open_link' && link) {
       if (link !== '#') {
         window.open(link, '_blank', 'noopener,noreferrer')
@@ -40,35 +38,46 @@ export const ClientInstructions = ({ subscription }: Props) => {
   return (
     <div style={{ padding: '0px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '24px' }}>
-        <h3 style={{ fontSize: '1.6rem', fontWeight: 900, fontFamily: 'var(--font-title)' }}>Установка</h3>
+        <h3 style={{ fontSize: '1.6rem', fontWeight: 900, fontFamily: 'var(--font-title)', letterSpacing: '-0.5px' }}>Инструкция по настройке</h3>
         
         {/* OS Selector */}
-        <div style={{ position: 'relative', width: '160px' }}>
-          <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', color: '#fff', cursor: 'pointer' }}>
+        <div style={{ position: 'relative', width: '180px', zIndex: 60 }}>
+          <button 
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
+            style={{ 
+              width: '100%', 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              padding: '12px 18px', 
+              background: 'rgba(255,255,255,0.02)', 
+              border: '1px solid rgba(255,255,255,0.08)', 
+              borderRadius: '14px', 
+              color: '#fff', 
+              cursor: 'pointer', 
+              transition: 'all 0.25s ease' 
+            }} 
+            onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(230,57,80,0.4)'} 
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {selectedOS === 'iOS' || selectedOS === 'macOS' ? <Apple size={16} color="rgba(255,255,255,0.6)" /> : selectedOS === 'Android' ? <Bot size={16} color="rgba(255,255,255,0.6)" /> : selectedOS === 'Linux' ? <Terminal size={16} color="rgba(255,255,255,0.6)" /> : selectedOS === 'Android TV' || selectedOS === 'Apple TV' ? <Tv size={16} color="rgba(255,255,255,0.6)" /> : <Monitor size={16} color="rgba(255,255,255,0.6)" />}
-              <span style={{ fontSize: '0.95rem', fontWeight: 600 }}>{selectedOS}</span>
+              {selectedOS === 'iOS' || selectedOS === 'macOS' ? <Apple size={16} color="#e63950" /> : selectedOS === 'Android' ? <Bot size={16} color="#e63950" /> : selectedOS === 'Linux' ? <Terminal size={16} color="#e63950" /> : selectedOS === 'Android TV' || selectedOS === 'Apple TV' ? <Tv size={16} color="#e63950" /> : <Monitor size={16} color="#e63950" />}
+              <span style={{ fontSize: '0.9rem', fontWeight: 800, fontFamily: 'var(--font-title)' }}>{selectedOS}</span>
             </div>
             <ChevronDown size={14} style={{ color: 'rgba(255,255,255,0.4)', transform: isDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
           </button>
           
           {isDropdownOpen && (
-            <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0, background: '#181b21', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '8px', zIndex: 50, boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+            <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0, background: 'rgba(15, 17, 28, 0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '6px', zIndex: 70, boxShadow: '0 15px 35px rgba(0,0,0,0.5)' }}>
               {(['Windows', 'macOS', 'Linux', 'iOS', 'Android', 'Android TV', 'Apple TV'] as OS[]).map((os) => (
                 <div key={os} onClick={() => { 
                   setSelectedOS(os); 
                   setIsDropdownOpen(false);
-                  if (os === 'iOS') setSelectedClient('happ');
-                  else if (os === 'Android') setSelectedClient('happ');
-                  else if (os === 'Linux') setSelectedClient('happ');
-                  else if (os === 'Windows') setSelectedClient('happ');
-                  else if (os === 'Android TV') setSelectedClient('happ');
-                  else if (os === 'Apple TV') setSelectedClient('happ');
-                  else setSelectedClient('happ');
+                  setSelectedClient('happ');
                 }}
-                  style={{ padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600, color: selectedOS === os ? '#fff' : 'rgba(255,255,255,0.7)', background: selectedOS === os ? 'rgba(255,255,255,0.1)' : 'transparent' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                  onMouseLeave={e => e.currentTarget.style.background = selectedOS === os ? 'rgba(255,255,255,0.1)' : 'transparent'}
+                  style={{ padding: '10px 14px', borderRadius: '10px', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 700, color: selectedOS === os ? '#fff' : 'rgba(255,255,255,0.6)', background: selectedOS === os ? 'rgba(230, 57, 80, 0.15)' : 'transparent', transition: 'all 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+                  onMouseLeave={e => e.currentTarget.style.background = selectedOS === os ? 'rgba(230, 57, 80, 0.15)' : 'transparent'}
                 >
                   {os}
                 </div>
@@ -79,7 +88,7 @@ export const ClientInstructions = ({ subscription }: Props) => {
       </div>
 
       {/* Client Tabs */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', overflowX: 'auto', paddingBottom: '8px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', overflowX: 'auto', paddingBottom: '8px' }} className="hide-scrollbar">
         {(() => {
           let clients: ClientApp[] = [];
           if (selectedOS === 'Windows') clients = ['happ', 'flclashx', 'koala clash', 'Prizrak-box'];
@@ -87,37 +96,48 @@ export const ClientInstructions = ({ subscription }: Props) => {
           else if (selectedOS === 'iOS') clients = ['happ', 'stash', 'shadowrocket', 'streisand'];
           else if (selectedOS === 'Android') clients = ['happ', 'flclashx', 'clash meta', 'v2rayng'];
           else if (selectedOS === 'Linux') clients = ['happ', 'koala clash', 'Prizrak-box'];
-          else if (selectedOS === 'Android TV') clients = ['happ', 'vpn4tv'];
+          else if (selectedOS === 'Android TV') clients = ['happ']; // Remove vpn4tv for compliance and simplicity
           else if (selectedOS === 'Apple TV') clients = ['happ', 'shadowrocket', 'stash'];
           else clients = ['happ'];
 
           return clients.map((client) => {
             const isActive = selectedClient === client;
-            const dotColor = client === 'happ' ? '#fbbf24' : '#14b8a6';
+            const dotColor = client === 'happ' ? '#ffaa00' : '#e63950';
             return (
               <button key={client} onClick={() => setSelectedClient(client)}
                 style={{
                   position: 'relative',
-                  padding: '16px 24px',
-                  background: isActive ? 'linear-gradient(to right, rgba(20, 184, 166, 0.15), rgba(20, 184, 166, 0.05))' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${isActive ? 'rgba(20, 184, 166, 0.5)' : 'rgba(255,255,255,0.05)'}`,
-                  borderRadius: '12px',
-                  color: isActive ? '#fff' : 'rgba(255,255,255,0.7)',
-                  fontSize: '1rem',
+                  padding: '14px 22px',
+                  background: isActive ? 'linear-gradient(135deg, rgba(230, 57, 80, 0.15), rgba(230, 57, 80, 0.02))' : 'rgba(255,255,255,0.01)',
+                  border: `1px solid ${isActive ? 'rgba(230, 57, 80, 0.4)' : 'rgba(255,255,255,0.05)'}`,
+                  borderRadius: '14px',
+                  color: isActive ? '#fff' : 'rgba(255,255,255,0.5)',
+                  fontSize: '0.92rem',
                   fontWeight: 800,
                   fontFamily: 'var(--font-title)',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
+                  transition: 'all 0.25s ease',
                   whiteSpace: 'nowrap',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
-                  overflow: 'hidden',
-                  textTransform: 'capitalize'
+                  gap: '10px',
+                  boxShadow: isActive ? '0 0 15px rgba(230, 57, 80, 0.12)' : 'none'
+                }}
+                onMouseEnter={e => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.01)';
+                  }
                 }}
               >
                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, boxShadow: isActive ? `0 0 8px ${dotColor}` : 'none' }}></div>
-                <span style={{ zIndex: 1 }}>{client}</span>
+                <span style={{ zIndex: 1, textTransform: 'capitalize' }}>{client}</span>
               </button>
             )
           });
@@ -125,22 +145,21 @@ export const ClientInstructions = ({ subscription }: Props) => {
       </div>
 
       {/* White List Banner */}
-      <div style={{ marginBottom: '24px', padding: '16px 20px', background: 'rgba(20, 184, 166, 0.1)', border: '1px solid rgba(20, 184, 166, 0.3)', borderRadius: '12px', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-        <ShieldCheck size={24} color="#14b8a6" style={{ flexShrink: 0, marginTop: '2px' }} />
+      <div style={{ marginBottom: '28px', padding: '20px 24px', background: 'linear-gradient(135deg, rgba(230, 57, 80, 0.08) 0%, rgba(230, 57, 80, 0.02) 100%)', border: '1px solid rgba(230, 57, 80, 0.25)', borderRadius: '18px', display: 'flex', gap: '16px', alignItems: 'flex-start', boxShadow: '0 8px 32px rgba(230, 57, 80, 0.03)' }}>
+        <ShieldCheck size={24} color="#e63950" style={{ flexShrink: 0, marginTop: '2px' }} />
         <div>
-          <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#14b8a6', marginBottom: '6px', fontFamily: 'var(--font-title)' }}>Белые списки (Обход РФ)</h4>
-          <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.5, margin: 0 }}>
-            Рекомендуем включить функцию <strong>«Обход локальных сетей и РФ»</strong> в настройках маршрутизации выбранного приложения. Это ускорит загрузку российских сайтов и защитит банковские приложения (Сбербанк, Тинькофф) от блокировок.
+          <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', marginBottom: '6px', fontFamily: 'var(--font-title)' }}>Оптимизация маршрутизации (Белые списки)</h4>
+          <p style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.55, margin: 0 }}>
+            Рекомендуем включить функцию <strong>«Обход локальных сетей и РФ»</strong> в настройках маршрутизации выбранного приложения. Это обеспечит максимальную скорость загрузки локальных сайтов и стабильную работу сервисов (Госуслуги, банки) без отключения сетевого профиля.
           </p>
         </div>
       </div>
 
       {/* Steps */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {(() => {
           const installSteps: any[] = [];
           
-          // Helper functions to generate common steps
           const getDownloadStep = (links: {label: string, url: string}[]) => ({
             id: '1', iconType: 'download', title: '1. Скачайте приложение', 
             desc: 'Выберите вашу систему и установите приложение по ссылке ниже.', 
@@ -148,17 +167,17 @@ export const ClientInstructions = ({ subscription }: Props) => {
           });
           
           const getCopyStep = () => ({
-            id: '2', iconType: 'copy', title: '2. Скопируйте ссылку на подписку', 
-            desc: 'Нажмите кнопку ниже, чтобы скопировать вашу персональную ссылку. По ней загрузятся все сервера и счетчик трафика.', 
+            id: '2', iconType: 'copy', title: '2. Скопируйте ссылку подключения', 
+            desc: 'Нажмите кнопку ниже, чтобы скопировать вашу персональную ссылку. По ней загрузятся все конфигурации серверов и счетчик трафика.', 
             buttons: [{ label: 'Скопировать ссылку', iconType: 'copy', action: 'copy_key', primary: true }]
           });
 
           const getImportStep = (importInstruction: string) => ({
-            id: '3', iconType: 'settings', title: '3. Добавьте сервера в приложение', 
+            id: '3', iconType: 'settings', title: '3. Добавьте в приложение', 
             desc: importInstruction
           });
 
-          const getConnectStep = (connectInstruction: string = 'Выберите нужный сервер из списка и нажмите кнопку подключения.') => ({
+          const getConnectStep = (connectInstruction: string = 'Выберите нужный сервер из списка и запустите подключение.') => ({
             id: '4', iconType: 'check', title: '4. Подключитесь', 
             desc: connectInstruction
           });
@@ -198,10 +217,10 @@ export const ClientInstructions = ({ subscription }: Props) => {
               installSteps.push(
                 getDownloadStep([{label: 'Скачать FlClash', url: 'https://github.com/chen08209/FlClash/releases/latest'}]),
                 getCopyStep(),
-                getImportStep('Откройте FlClash, перейдите в раздел Профили, нажмите кнопку +, выберите "Из буфера обмена".'),
+                getImportStep('Откройте FlClash, перейдите в раздел Профили, нажмите кнопку +, выберите "Из буфера обмена" и сохраните.'),
                 getConnectStep()
               );
-            } else {
+            } else if (selectedClient === 'koala clash' || selectedClient === 'Prizrak-box') {
               installSteps.push(
                 getDownloadStep([{label: 'Скачать приложение', url: '#'}]),
                 getCopyStep(),
@@ -266,7 +285,7 @@ export const ClientInstructions = ({ subscription }: Props) => {
                 getDownloadStep([{label: 'Google Play', url: 'https://play.google.com/store/apps/details?id=com.v2ray.ang'}]),
                 getCopyStep(),
                 getImportStep('Откройте v2rayNG, нажмите на иконку "+" в правом верхнем углу и выберите "Импорт профиля из буфера обмена".'),
-                getConnectStep('Выберите нужный сервер в списке, чтобы он подсветился, и нажмите на круглую кнопку VPN внизу справа.')
+                getConnectStep('Выберите нужный сервер в списке, чтобы он подсветился, и нажмите на круглую кнопку подключения внизу справа.')
               );
             }
           } else if (selectedOS === 'Linux') {
@@ -293,13 +312,6 @@ export const ClientInstructions = ({ subscription }: Props) => {
                 getImportStep('Откройте приложение на телевизоре. Используйте приложение на телефоне для сканирования QR-кода добавления или передайте скопированные ссылки через буфер обмена Android TV (Android TV Remote).'),
                 getConnectStep()
               );
-            } else if (selectedClient === 'vpn4tv') {
-               installSteps.push(
-                 getDownloadStep([{label: 'Скачать', url: '#'}]),
-                 getCopyStep(),
-                 getImportStep('Следуйте инструкциям в приложении для импорта профилей.'),
-                 getConnectStep()
-               );
             }
           } else if (selectedOS === 'Apple TV') {
              if (selectedClient === 'happ') {
@@ -310,41 +322,64 @@ export const ClientInstructions = ({ subscription }: Props) => {
                 getConnectStep()
               );
              } else if (selectedClient === 'shadowrocket') {
-               installSteps.push(
-                getDownloadStep([{label: 'App Store', url: 'https://apps.apple.com/us/app/shadowrocket/id932747118'}]),
-                getCopyStep(),
-                getImportStep('Рекомендуется добавить ключи в Shadowrocket на iPhone, после чего они синхронизируются на Apple TV через iCloud.'),
-                getConnectStep()
-              );
+                installSteps.push(
+                 getDownloadStep([{label: 'App Store', url: 'https://apps.apple.com/us/app/shadowrocket/id932747118'}]),
+                 getCopyStep(),
+                 getImportStep('Рекомендуется добавить ключи в Shadowrocket на iPhone, после чего они синхронизируются на Apple TV через iCloud.'),
+                 getConnectStep()
+               );
              } else if (selectedClient === 'stash') {
-               installSteps.push(
-                getDownloadStep([{label: 'App Store', url: 'https://apps.apple.com/us/app/stash/id1596063349'}]),
-                getCopyStep(),
-                getImportStep('Рекомендуется добавить ключи в Stash на iPhone, после чего они синхронизируются на Apple TV через iCloud.'),
-                getConnectStep()
-              );
+                installSteps.push(
+                 getDownloadStep([{label: 'App Store', url: 'https://apps.apple.com/us/app/stash/id1596063349'}]),
+                 getCopyStep(),
+                 getImportStep('Рекомендуется добавить ключи в Stash на iPhone, после чего они синхронизируются на Apple TV через iCloud.'),
+                 getConnectStep()
+               );
              }
           }
 
           return installSteps.map(step => {
             let IconComp = Check;
-            let color = '#14b8a6';
-            let bg = 'rgba(20, 184, 166, 0.08)';
+            let color = '#fbbf24';
+            let bg = 'rgba(251, 191, 36, 0.08)';
 
-            if (step.iconType === 'download') IconComp = Download;
-            if (step.iconType === 'cloud') IconComp = CloudDownload;
-            if (step.iconType === 'settings') { IconComp = Settings; color = '#14b8a6'; bg = 'rgba(20, 184, 166, 0.08)'; }
-            if (step.iconType === 'warning') { IconComp = Settings; color = '#f87171'; bg = 'rgba(248, 113, 113, 0.08)'; }
-            if (step.iconType === 'check') { IconComp = Check; color = '#14b8a6'; bg = 'rgba(20, 184, 166, 0.08)'; }
-            if (step.iconType === 'copy') { IconComp = Copy; color = '#fbbf24'; bg = 'rgba(251, 191, 36, 0.08)'; }
+            if (step.iconType === 'download') { IconComp = Download; color = '#e63950'; bg = 'rgba(230, 57, 80, 0.08)'; }
+            if (step.iconType === 'cloud') { IconComp = CloudDownload; color = '#e63950'; bg = 'rgba(230, 57, 80, 0.08)'; }
+            if (step.iconType === 'settings') { IconComp = Settings; color = '#38bdf8'; bg = 'rgba(56, 189, 248, 0.08)'; }
+            if (step.iconType === 'warning') { IconComp = Settings; color = '#ef4444'; bg = 'rgba(239, 68, 68, 0.08)'; }
+            if (step.iconType === 'check') { IconComp = Check; color = '#22c55e'; bg = 'rgba(34, 197, 94, 0.08)'; }
+            if (step.iconType === 'copy') { IconComp = Copy; color = '#a855f7'; bg = 'rgba(168, 85, 247, 0.08)'; }
 
             return (
-              <div key={step.id} style={{ display: 'flex', padding: '24px', background: '#171920', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', gap: '20px' }}>
+              <div 
+                key={step.id} 
+                style={{ 
+                  display: 'flex', 
+                  padding: '24px', 
+                  background: 'rgba(10, 12, 26, 0.6)', 
+                  backdropFilter: 'blur(20px)', 
+                  borderRadius: '18px', 
+                  border: '1px solid rgba(255,255,255,0.05)', 
+                  gap: '20px',
+                  transition: 'all 0.3s ease',
+                  transform: 'translateY(0)'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.3)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
                 <div style={{ flexShrink: 0, width: '48px', height: '48px', borderRadius: '50%', background: bg, border: `1px solid ${color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <IconComp size={22} color={color} />
                 </div>
                 <div>
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', marginBottom: '10px' }}>{step.title}</h4>
+                  <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', marginBottom: '10px', fontFamily: 'var(--font-title)' }}>{step.title}</h4>
                   <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: step.buttons ? '16px' : '0' }}>{step.desc}</p>
                   
                   {step.buttons && (
@@ -354,16 +389,38 @@ export const ClientInstructions = ({ subscription }: Props) => {
                         if (btn.iconType === 'plus') BtnIcon = Plus;
                         if (btn.iconType === 'copy') BtnIcon = Copy;
 
+                        const isPrimary = btn.primary;
+
                         return (
-                          <button key={i} onClick={() => {
-                            if ('action' in btn) handleAction(btn.action, btn.link);
-                          }} style={{
-                            display: 'flex', alignItems: 'center', gap: '8px',
-                            padding: '10px 20px', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-                            background: btn.primary ? 'rgba(20, 184, 166, 0.15)' : 'rgba(255,255,255,0.03)',
-                            border: `1px solid ${btn.primary ? '#14b8a6' : 'rgba(255,255,255,0.1)'}`,
-                            color: btn.primary ? '#14b8a6' : '#14b8a6'
-                          }}>
+                          <button 
+                            key={i} 
+                            onClick={() => {
+                              if ('action' in btn) handleAction(btn.action, btn.link);
+                            }} 
+                            style={{
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '8px',
+                              padding: '11px 22px', 
+                              borderRadius: '12px', 
+                              fontSize: '0.88rem', 
+                              fontWeight: 700, 
+                              cursor: 'pointer', 
+                              transition: 'all 0.25s ease',
+                              background: isPrimary ? '#e63950' : 'rgba(255,255,255,0.04)',
+                              border: `1px solid ${isPrimary ? '#e63950' : 'rgba(255,255,255,0.12)'}`,
+                              color: '#fff',
+                              boxShadow: isPrimary ? '0 4px 14px rgba(230, 57, 80, 0.3)' : 'none'
+                            }}
+                            onMouseEnter={e => {
+                              e.currentTarget.style.background = isPrimary ? '#ff4d66' : 'rgba(255,255,255,0.08)';
+                              if (isPrimary) e.currentTarget.style.boxShadow = '0 6px 20px rgba(230, 57, 80, 0.5)';
+                            }}
+                            onMouseLeave={e => {
+                              e.currentTarget.style.background = isPrimary ? '#e63950' : 'rgba(255,255,255,0.04)';
+                              if (isPrimary) e.currentTarget.style.boxShadow = '0 4px 14px rgba(230, 57, 80, 0.3)';
+                            }}
+                          >
                             <BtnIcon size={16} /> {'action' in btn && btn.action === 'copy_key' && copiedKey ? 'Скопировано!' : btn.label}
                           </button>
                         );

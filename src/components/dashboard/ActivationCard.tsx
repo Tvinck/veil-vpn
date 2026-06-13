@@ -45,7 +45,7 @@ export const ActivationCard = ({ subscription, fetchUserData }: Props) => {
   }
 
   return (
-    <div className="sec-dash-card">
+    <div className="sec-dash-card" style={{ background: 'rgba(10, 12, 26, 0.6)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '24px', padding: '30px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)' }}>
       <div className="sec-dash-card-header">
         <div className="sec-dash-icon-box"><Ticket size={20} color="#e63950" strokeWidth={2.5} /></div>
         <h3 className="sec-dash-title">Продлить подписку</h3>

@@ -123,11 +123,13 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="sec-dash-container" style={{ background: '#030307', minHeight: '100vh' }}>
-      <div className="sec-dash-ambient-1"></div>
-      <div className="sec-dash-ambient-2"></div>
+    <div className="sec-dash-container" style={{ background: '#030307', minHeight: '100vh', position: 'relative', overflowX: 'hidden' }}>
+      <div className="cyber-grid" />
+      <div className="sec-dash-ambient-1" style={{ zIndex: 1 }}></div>
+      <div className="sec-dash-ambient-2" style={{ zIndex: 1 }}></div>
 
-      <DashboardHeader />
+      <div style={{ position: 'relative', zIndex: 2 }}>
+        <DashboardHeader />
 
       <main className="sec-dash-main" style={{ padding: '40px 8%', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
         <SubscriptionCard 
@@ -147,57 +149,75 @@ export default function Dashboard() {
             friends={friends} 
           />
 
-          {/* Quests Card */}
-          <div className="sec-dash-card" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '28px' }}>
-            <div className="sec-dash-card-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-              <div className="sec-dash-icon-box" style={{ background: 'rgba(230,57,80,0.12)', width: '38px', height: '38px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Send size={18} color="#e63950" strokeWidth={2.5} />
-              </div>
-              <h3 className="sec-dash-title" style={{ color: '#fff', fontSize: '1.15rem', fontWeight: 800 }}>Квесты Telegram</h3>
-            </div>
-            <p className="sec-dash-desc" style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.45, marginBottom: '24px' }}>
-              Выполняйте задания в нашем боте и получайте дополнительные дни бесплатного подключения моментально на баланс!
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div className={`sec-task-item ${profile.tg_bot_linked ? 'sec-task-item-done' : ''}`} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '14px', padding: '16px' }}>
-                <div className="sec-task-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <h4 className="sec-task-title" style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff' }}>Подключение бота</h4>
-                  <span className="sec-badge-red" style={{ fontSize: '0.72rem', background: 'rgba(230,57,80,0.15)', color: '#ff7085', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>+10 дней</span>
+            {/* Quests Card */}
+            <div className="sec-dash-card" style={{ background: 'rgba(10, 12, 26, 0.6)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '24px', padding: '28px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)' }}>
+              <div className="sec-dash-card-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <div className="sec-dash-icon-box" style={{ background: 'rgba(230,57,80,0.12)', width: '38px', height: '38px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Send size={18} color="#e63950" strokeWidth={2.5} />
                 </div>
-                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.45, marginBottom: '12px' }}>
-                  Запустите нашего бота @Veil_Vps_bot. Он будет сообщать об окончании подписки и новых серверах.
-                </p>
-                {profile.tg_bot_linked ? (
-                  <div style={{ color: '#22c55e', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Check size={14} /> Выполнено
-                  </div>
-                ) : (
-                  <button onClick={handleLinkBot} disabled={linkingBot} className="btn-ghost-cta" style={{ padding: '8px 14px', fontSize: '0.8rem', justifyContent: 'center', width: 'fit-content' }}>
-                    {linkingBot ? <Loader2 size={14} className="animate-spin" /> : 'Запустить бота'}
-                  </button>
-                )}
+                <h3 className="sec-dash-title" style={{ color: '#fff', fontSize: '1.15rem', fontWeight: 800 }}>Квесты Telegram</h3>
               </div>
+              <p className="sec-dash-desc" style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.45, marginBottom: '24px' }}>
+                Выполняйте задания в нашем боте и получайте дополнительные дни бесплатного подключения моментально на баланс!
+              </p>
 
-              <div className={`sec-task-item ${profile.tg_channel_subscribed ? 'sec-task-item-done' : ''}`} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '14px', padding: '16px' }}>
-                <div className="sec-task-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <h4 className="sec-task-title" style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff' }}>Подписка на канал</h4>
-                  <span className="sec-badge-red" style={{ fontSize: '0.72rem', background: 'rgba(230,57,80,0.15)', color: '#ff7085', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>+10 дней</span>
-                </div>
-                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.45, marginBottom: '12px' }}>
-                  Подпишитесь на наш закрытый новостной канал. Будьте в курсе акций и обновлений приложения.
-                </p>
-                {profile.tg_channel_subscribed ? (
-                  <div style={{ color: '#22c55e', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Check size={14} /> Выполнено
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div 
+                  className={`sec-task-item ${profile.tg_bot_linked ? 'sec-task-item-done' : ''}`} 
+                  style={{ 
+                    background: profile.tg_bot_linked ? 'rgba(230,57,80,0.04)' : 'rgba(255,255,255,0.02)', 
+                    border: `1px solid ${profile.tg_bot_linked ? 'rgba(230,57,80,0.25)' : 'rgba(255,255,255,0.06)'}`, 
+                    borderRadius: '16px', 
+                    padding: '16px', 
+                    transition: 'all 0.3s ease' 
+                  }}
+                >
+                  <div className="sec-task-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <h4 className="sec-task-title" style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff' }}>Подключение бота</h4>
+                    <span className="sec-badge-red" style={{ fontSize: '0.72rem', background: 'rgba(230,57,80,0.15)', color: '#ff7085', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>+10 дней</span>
                   </div>
-                ) : (
-                  <button onClick={handleSubscribeChannel} disabled={subscribingChannel} className="btn-ghost-cta" style={{ padding: '8px 14px', fontSize: '0.8rem', justifyContent: 'center', width: 'fit-content' }}>
-                    {subscribingChannel ? <Loader2 size={14} className="animate-spin" /> : 'Подписаться'}
-                  </button>
-                )}
+                  <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.45, marginBottom: '12px' }}>
+                    Запустите нашего бота @Veil_Vps_bot. Он будет сообщать об окончании подписки и новых серверах.
+                  </p>
+                  {profile.tg_bot_linked ? (
+                    <div style={{ color: '#22c55e', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Check size={14} /> Выполнено
+                    </div>
+                  ) : (
+                    <button onClick={handleLinkBot} disabled={linkingBot} className="btn-ghost-cta" style={{ padding: '8px 14px', fontSize: '0.8rem', justifyContent: 'center', width: 'fit-content' }}>
+                      {linkingBot ? <Loader2 size={14} className="animate-spin" /> : 'Запустить бота'}
+                    </button>
+                  )}
+                </div>
+
+                <div 
+                  className={`sec-task-item ${profile.tg_channel_subscribed ? 'sec-task-item-done' : ''}`} 
+                  style={{ 
+                    background: profile.tg_channel_subscribed ? 'rgba(230,57,80,0.04)' : 'rgba(255,255,255,0.02)', 
+                    border: `1px solid ${profile.tg_channel_subscribed ? 'rgba(230,57,80,0.25)' : 'rgba(255,255,255,0.06)'}`, 
+                    borderRadius: '16px', 
+                    padding: '16px', 
+                    transition: 'all 0.3s ease' 
+                  }}
+                >
+                  <div className="sec-task-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <h4 className="sec-task-title" style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff' }}>Подписка на канал</h4>
+                    <span className="sec-badge-red" style={{ fontSize: '0.72rem', background: 'rgba(230,57,80,0.15)', color: '#ff7085', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>+10 дней</span>
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.45, marginBottom: '12px' }}>
+                    Подпишитесь на наш закрытый новостной канал. Будьте в курсе акций и обновлений приложения.
+                  </p>
+                  {profile.tg_channel_subscribed ? (
+                    <div style={{ color: '#22c55e', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Check size={14} /> Выполнено
+                    </div>
+                  ) : (
+                    <button onClick={handleSubscribeChannel} disabled={subscribingChannel} className="btn-ghost-cta" style={{ padding: '8px 14px', fontSize: '0.8rem', justifyContent: 'center', width: 'fit-content' }}>
+                      {subscribingChannel ? <Loader2 size={14} className="animate-spin" /> : 'Подписаться'}
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
             
             {tgBonusMsg && (
               <div style={{ color: '#22c55e', fontSize: '0.85rem', marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(34,197,94,0.1)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(34,197,94,0.2)' }}>
@@ -211,6 +231,7 @@ export default function Dashboard() {
       </main>
       
       <SupportChat profileId={profile.id} />
+      </div>
     </div>
   )
 }

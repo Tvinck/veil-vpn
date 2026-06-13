@@ -58,7 +58,7 @@ export const SubscriptionCard = ({ profile, subscription, allSubscriptions }: Pr
   const red = '#e63950'
 
   return (
-    <div className="sec-profile-card" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '30px' }}>
+    <div className="sec-profile-card" style={{ background: 'rgba(10, 12, 26, 0.6)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '24px', padding: '30px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(230, 57, 80, 0.02)' }}>
       <div className="sec-profile-header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <div className="sec-profile-avatar" style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(230,57,80,0.1)', border: '1px solid rgba(230,57,80,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <User size={24} color="#e63950" strokeWidth={2.5} />
@@ -123,12 +123,22 @@ export const SubscriptionCard = ({ profile, subscription, allSubscriptions }: Pr
       )}
 
       <div className="sec-profile-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '24px', marginBottom: '24px' }}>
-        <div className="sec-stat-box" style={{ border: '1px solid rgba(255,255,255,0.04)', borderRadius: '16px', padding: '16px', background: 'rgba(255,255,255,0.01)' }}>
+        <div 
+          className="sec-stat-box" 
+          style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '16px', background: 'rgba(255,255,255,0.01)', transition: 'all 0.25s ease', transform: 'translateY(0)' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'; e.currentTarget.style.boxShadow = 'none' }}
+        >
           <span className="sec-stat-label" style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '6px' }}>Имя пользователя</span>
           <span className="sec-stat-val" style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>{profile.username}</span>
         </div>
 
-        <div className="sec-stat-box" style={{ border: '1px solid rgba(255,255,255,0.04)', borderRadius: '16px', padding: '16px', background: 'rgba(255,255,255,0.01)' }}>
+        <div 
+          className="sec-stat-box" 
+          style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '16px', background: 'rgba(255,255,255,0.01)', transition: 'all 0.25s ease', transform: 'translateY(0)' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'; e.currentTarget.style.boxShadow = 'none' }}
+        >
           <span className="sec-stat-label" style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '6px' }}>Статус подключения</span>
           {subscription.status === 'active' && activeDays > 0 ? (
             <span className="sec-stat-val" style={{ color: '#22c55e', fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -143,14 +153,24 @@ export const SubscriptionCard = ({ profile, subscription, allSubscriptions }: Pr
           )}
         </div>
 
-        <div className="sec-stat-box" style={{ border: `1px solid ${subscription.status === 'active' && activeDays > 0 ? 'rgba(255,255,255,0.04)' : 'rgba(239, 68, 68, 0.25)'}`, borderRadius: '16px', padding: '16px', background: subscription.status === 'active' && activeDays > 0 ? 'rgba(255,255,255,0.01)' : 'rgba(239, 68, 68, 0.05)' }}>
+        <div 
+          className="sec-stat-box" 
+          style={{ border: `1px solid ${subscription.status === 'active' && activeDays > 0 ? 'rgba(255,255,255,0.05)' : 'rgba(239, 68, 68, 0.25)'}`, borderRadius: '16px', padding: '16px', background: subscription.status === 'active' && activeDays > 0 ? 'rgba(255,255,255,0.01)' : 'rgba(239, 68, 68, 0.05)', transition: 'all 0.25s ease', transform: 'translateY(0)' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = subscription.status === 'active' && activeDays > 0 ? 'rgba(255,255,255,0.1)' : 'rgba(239, 68, 68, 0.4)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = subscription.status === 'active' && activeDays > 0 ? 'rgba(255,255,255,0.05)' : 'rgba(239, 68, 68, 0.25)'; e.currentTarget.style.boxShadow = 'none' }}
+        >
           <span className="sec-stat-label" style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '6px' }}>Истекает</span>
           <span className="sec-stat-val" style={{ fontSize: '1.1rem', fontWeight: 800, color: subscription.status === 'active' && activeDays > 0 ? '#fff' : '#ef4444' }}>
             {expiryDate}
           </span>
         </div>
 
-        <div className="sec-stat-box" style={{ border: '1px solid rgba(230, 57, 80, 0.25)', borderRadius: '16px', padding: '16px', background: 'rgba(230, 57, 80, 0.03)' }}>
+        <div 
+          className="sec-stat-box" 
+          style={{ border: '1px solid rgba(230, 57, 80, 0.25)', borderRadius: '16px', padding: '16px', background: 'rgba(230, 57, 80, 0.03)', transition: 'all 0.25s ease', transform: 'translateY(0)' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'rgba(230,57,80,0.45)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(230, 57, 80, 0.05)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(230, 57, 80, 0.25)'; e.currentTarget.style.boxShadow = 'none' }}
+        >
           <span className="sec-stat-label" style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '6px' }}>Объем трафика</span>
           <span className="sec-stat-val" style={{ fontSize: '1.1rem', fontWeight: 800, color: '#e63950' }}>
             {trafficUsedFormatted} / {trafficLimitFormatted}
