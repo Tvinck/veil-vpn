@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Lock, Key, Info, CheckCircle2, ShieldCheck, Cpu, Smartphone, Zap } from 'lucide-react'
+import { ArrowRight, Lock, Key, Info, CheckCircle2, ShieldCheck, Smartphone, Zap } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { WorldGlobe } from './ui/WorldGlobe'
@@ -9,6 +9,7 @@ import { Badge } from './landing/Badge'
 import { Pricing } from './landing/Pricing'
 import { Reviews } from './landing/Reviews'
 import { TiltCard } from './ui/TiltCard'
+import { BentoWave, BentoGlassStar, BentoGear } from './ui/BentoVisuals'
 
 const containerVariants = {
   hidden: {},
@@ -281,36 +282,75 @@ export default function LandingPage() {
             className="h-full"
           >
             <TiltCard className="h-full">
-              <div className="sec-feature-card sec-feature-card-red h-full" style={{ padding: '35px 30px' }}>
-                <div className="sec-feat-icon" style={{ background: 'rgba(230,57,80,0.12)', border: '1px solid rgba(230,57,80,0.25)', marginBottom: '24px' }}>
-                  <ShieldCheck size={24} color={red} strokeWidth={2.5} />
+              <div className="sec-feature-card sec-feature-card-dark h-full relative overflow-hidden" style={{ padding: '38px 32px', borderRadius: '30px', minHeight: '380px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: 'rgba(6, 6, 12, 0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                {/* 3D wave background visual */}
+                <BentoWave />
+
+                <div style={{ position: 'relative', zIndex: 2 }}>
+                  <div className="sec-feat-icon" style={{ background: 'rgba(230,57,80,0.12)', border: '1px solid rgba(230,57,80,0.25)', marginBottom: '24px', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ShieldCheck size={22} color={red} strokeWidth={2.5} />
+                  </div>
+                  <h3 className="sec-feat-title" style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px', color: '#fff', letterSpacing: '-0.5px' }}>Преимущества профиля</h3>
+                  <motion.ul 
+                    variants={listContainer}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    style={{ display: 'flex', flexDirection: 'column', gap: '14px', listStyle: 'none' }}
+                  >
+                    <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>
+                      <span style={{ color: red, fontWeight: 'bold' }}>✓</span> Автоматическая выдача ключа сразу после оплаты.
+                    </motion.li>
+                    <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>
+                      <span style={{ color: red, fontWeight: 'bold' }}>✓</span> Доступ ко всем ресурсам при простой настройке.
+                    </motion.li>
+                    <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.4 }}>
+                      <span style={{ color: red, fontWeight: 'bold' }}>✓</span> Самая доступная стоимость профиля на рынке.
+                    </motion.li>
+                  </motion.ul>
                 </div>
-                <h3 className="sec-feat-title" style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '20px' }}>Преимущества профиля</h3>
-                <motion.ul 
-                  variants={listContainer}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                  style={{ display: 'flex', flexDirection: 'column', gap: '14px', listStyle: 'none' }}
-                >
-                  <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-                    <span style={{ color: red }}>✓</span> Автоматическая выдача ключа (ссылки) сразу после оплаты.
-                  </motion.li>
-                  <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-                    <span style={{ color: red }}>✓</span> Доступ ко всем ресурсам при максимально простой настройке.
-                  </motion.li>
-                  <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-                    <span style={{ color: red }}>✓</span> Самая доступная стоимость сетевого профиля на рынке.
-                  </motion.li>
-                  <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-                    <span style={{ color: red }}>✓</span> Доступ к множеству зашифрованных сетевых направлений.
-                  </motion.li>
-                </motion.ul>
+
+                {/* Bottom Row Layout matching Photo 2 */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '28px', position: 'relative', zIndex: 3 }}>
+                  <div style={{
+                    padding: '6px 14px',
+                    background: 'rgba(230, 57, 80, 0.08)',
+                    border: '1.5px solid rgba(230, 57, 80, 0.25)',
+                    borderRadius: '100px',
+                    fontSize: '0.74rem',
+                    fontWeight: 800,
+                    color: '#ff4a6b',
+                    letterSpacing: '0.5px',
+                    textTransform: 'uppercase',
+                    fontFamily: 'var(--font-cyber)'
+                  }}>
+                    Автовыдача
+                  </div>
+                  <motion.div 
+                    whileHover={{ scale: 1.1, backgroundColor: '#ffffff', color: '#000000' }}
+                    onClick={() => navigate('/checkout')}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s, color 0.2s'
+                    }}
+                  >
+                    <ArrowRight size={14} />
+                  </motion.div>
+                </div>
               </div>
             </TiltCard>
           </motion.div>
 
-          {/* Card 2: Wireframe / Visual */}
+          {/* Card 2: Interactive 3D Glass Star */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -319,44 +359,60 @@ export default function LandingPage() {
             className="h-full"
           >
             <TiltCard className="h-full">
-              <div className="sec-feature-card sec-feature-card-glow h-full relative overflow-hidden" style={{ minHeight: '340px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                <motion.div 
-                  animate={{ 
-                    scale: [1, 1.2, 1],
-                    opacity: [0.15, 0.35, 0.15]
-                  }}
-                  transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                  style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 50%, rgba(230,57,80,0.25) 0%, transparent 60%)' }} 
-                />
-                <motion.div 
-                  animate={{ 
-                    y: [0, -6, 0],
-                    boxShadow: [
-                      '0 0 20px rgba(230,57,80,0.4)',
-                      '0 0 35px rgba(230,57,80,0.75)',
-                      '0 0 20px rgba(230,57,80,0.4)'
-                    ]
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                  style={{ width: '64px', height: '64px', borderRadius: '50%', background: red, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', position: 'relative', zIndex: 2 }}
-                >
-                  <Cpu size={28} color="#fff" />
-                </motion.div>
-                <span style={{ fontSize: '1.1rem', fontWeight: 800, textTransform: 'uppercase', fontFamily: 'var(--font-cyber)', color: '#fff', position: 'relative', zIndex: 2, letterSpacing: '1px' }}>VLESS Reality</span>
-                <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', marginTop: '6px', position: 'relative', zIndex: 2 }}>Протокол последнего поколения</span>
+              <div className="sec-feature-card sec-feature-card-glow h-full relative overflow-hidden" style={{ padding: '38px 32px', borderRadius: '30px', minHeight: '380px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: 'rgba(6, 6, 12, 0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                
+                {/* Text at top */}
+                <div style={{ position: 'relative', zIndex: 2, textAlign: 'center' }}>
+                  <span style={{ fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', fontFamily: 'var(--font-cyber)', color: '#fff', letterSpacing: '1.5px', textShadow: '0 0 20px rgba(0,240,255,0.1)' }}>VLESS Reality</span>
+                  <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>Протокол последнего поколения</p>
+                </div>
+
+                {/* Rotating Glass Star centered */}
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1, padding: '10px 0' }}>
+                  <BentoGlassStar />
+                </div>
+
+                {/* Bottom Row Layout matching Photo 2 */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 3 }}>
+                  <div style={{
+                    padding: '6px 14px',
+                    background: 'rgba(168, 85, 247, 0.08)',
+                    border: '1.5px solid rgba(168, 85, 247, 0.25)',
+                    borderRadius: '100px',
+                    fontSize: '0.74rem',
+                    fontWeight: 800,
+                    color: '#c084fc',
+                    letterSpacing: '0.5px',
+                    textTransform: 'uppercase',
+                    fontFamily: 'var(--font-cyber)'
+                  }}>
+                    Reality
+                  </div>
+                  <motion.div 
+                    whileHover={{ scale: 1.1, backgroundColor: '#ffffff', color: '#000000' }}
+                    onClick={() => navigate('/checkout')}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s, color 0.2s'
+                    }}
+                  >
+                    <ArrowRight size={14} />
+                  </motion.div>
+                </div>
               </div>
             </TiltCard>
           </motion.div>
 
-          {/* Card 3: Limitations & Instructions */}
+          {/* Card 3: Limitations & Gear */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -365,31 +421,70 @@ export default function LandingPage() {
             className="h-full"
           >
             <TiltCard className="h-full">
-              <div className="sec-feature-card sec-feature-card-dark h-full" style={{ padding: '35px 30px' }}>
-                <div className="sec-feat-icon" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '24px' }}>
-                  <Lock size={22} color="rgba(255,255,255,0.8)" strokeWidth={2} />
+              <div className="sec-feature-card sec-feature-card-dark h-full relative overflow-hidden" style={{ padding: '38px 32px', borderRadius: '30px', minHeight: '380px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: 'rgba(6, 6, 12, 0.7)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                {/* 3D gear visual absolute in background */}
+                <BentoGear />
+
+                <div style={{ position: 'relative', zIndex: 2 }}>
+                  <div className="sec-feat-icon" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '24px', width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Lock size={20} color="rgba(255,255,255,0.8)" strokeWidth={2} />
+                  </div>
+                  <h3 className="sec-feat-title" style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px', color: '#fff', letterSpacing: '-0.5px' }}>Условия и лимиты</h3>
+                  <motion.ul 
+                    variants={listContainer}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    style={{ display: 'flex', flexDirection: 'column', gap: '14px', listStyle: 'none' }}
+                  >
+                    <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.45 }}>
+                      <span style={{ color: red, fontWeight: 'bold' }}>✳</span> Один профиль на 3 устройства.
+                    </motion.li>
+                    <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.45 }}>
+                      <span style={{ color: red, fontWeight: 'bold' }}>✳</span> Полное отсутствие лимитов трафика.
+                    </motion.li>
+                    <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.85)', lineHeight: 1.45 }}>
+                      <span style={{ color: red, fontWeight: 'bold' }}>✳</span> Инструкции выдаются сразу.
+                    </motion.li>
+                  </motion.ul>
                 </div>
-                <h3 className="sec-feat-title" style={{ fontSize: '1.35rem', fontWeight: 800, marginBottom: '20px' }}>Условия и лимиты</h3>
-                <motion.ul 
-                  variants={listContainer}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                  style={{ display: 'flex', flexDirection: 'column', gap: '14px', listStyle: 'none' }}
-                >
-                  <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.45 }}>
-                    <span style={{ color: red }}>✳</span> Один профиль рассчитан на <strong>3 устройства</strong> одновременно.
-                  </motion.li>
-                  <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.45 }}>
-                    <span style={{ color: red }}>✳</span> Полное отсутствие лимитов на объем проходящего трафика.
-                  </motion.li>
-                  <motion.li variants={listItem} style={{ display: 'flex', gap: '10px', fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.45 }}>
-                    <span style={{ color: red }}>✳</span> Подробная пошаговая инструкция предоставляется сразу после совершения покупки.
-                  </motion.li>
-                  <motion.li variants={listItem} style={{ fontSize: '0.76rem', color: 'rgba(255,255,255,0.4)', lineHeight: 1.4, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', marginTop: '6px' }}>
-                    * Фактическая скорость зависит от конфигурации устройства, типа сети клиента, оператора связи и текущей нагрузки.
-                  </motion.li>
-                </motion.ul>
+
+                {/* Bottom Row Layout matching Photo 2 */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '28px', position: 'relative', zIndex: 3 }}>
+                  <div style={{
+                    padding: '6px 14px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1.5px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '100px',
+                    fontSize: '0.74rem',
+                    fontWeight: 800,
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    letterSpacing: '0.5px',
+                    textTransform: 'uppercase',
+                    fontFamily: 'var(--font-cyber)'
+                  }}>
+                    Спецификации
+                  </div>
+                  <motion.div 
+                    whileHover={{ scale: 1.1, backgroundColor: '#ffffff', color: '#000000' }}
+                    onClick={() => setIsLoginOpen(true)}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s, color 0.2s'
+                    }}
+                  >
+                    <ArrowRight size={14} />
+                  </motion.div>
+                </div>
               </div>
             </TiltCard>
           </motion.div>
