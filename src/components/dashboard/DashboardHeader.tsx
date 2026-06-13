@@ -1,25 +1,77 @@
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Shield, Send } from 'lucide-react'
+import { ArrowLeft, Send } from 'lucide-react'
+import { VeilLogo } from '../ui/VeilLogo'
 
 export const DashboardHeader = () => {
   const navigate = useNavigate()
 
   return (
-    <header className="sec-dash-header">
-      <button onClick={() => navigate('/')} className="sec-dash-back-btn">
-        <ArrowLeft size={16} />
-        <span className="mobile-hide">Вернуться на сайт</span>
+    <header className="sec-dash-header" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', background: 'rgba(10, 10, 15, 0.75)', backdropFilter: 'blur(20px)' }}>
+      <button 
+        onClick={() => navigate('/')} 
+        className="sec-dash-back-btn" 
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '8px', 
+          padding: '8px 16px', 
+          borderRadius: '10px', 
+          background: 'rgba(255,255,255,0.02)', 
+          border: '1px solid rgba(255,255,255,0.08)',
+          color: 'rgba(255,255,255,0.6)',
+          transition: 'all 0.25s ease'
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.borderColor = 'rgba(230,57,80,0.3)';
+          e.currentTarget.style.color = '#fff';
+          e.currentTarget.style.background = 'rgba(230,57,80,0.04)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+          e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
+          e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+        }}
+      >
+        <ArrowLeft size={15} />
+        <span className="mobile-hide" style={{ fontWeight: 700, fontSize: '0.85rem' }}>На главную</span>
       </button>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div style={{ width: '34px', height: '34px', background: '#e63950', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 18px rgba(230,57,80,0.55)' }}>
-          <Shield size={18} color="#fff" strokeWidth={2.5} />
-        </div>
+      
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <VeilLogo />
         <span style={{ fontFamily: 'var(--font-cyber)', fontSize: '1.25rem', fontWeight: 900, letterSpacing: '2px', color: '#fff' }}>
           VEIL<span style={{ color: '#e63950' }}>.NET</span>
         </span>
       </div>
-      <a href="https://t.me/Veil_Vps_bot" target="_blank" rel="noreferrer" style={{ color: 'rgba(255,255,255,0.6)', transition: 'color 0.2s' }} title="Поддержка в Telegram" onMouseEnter={e => e.currentTarget.style.color = '#e63950'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}>
-        <Send size={20} />
+      
+      <a 
+        href="https://t.me/Veil_Vps_bot" 
+        target="_blank" 
+        rel="noreferrer" 
+        style={{ 
+          width: '38px',
+          height: '38px',
+          borderRadius: '10px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          color: 'rgba(255,255,255,0.6)', 
+          transition: 'all 0.25s ease' 
+        }} 
+        title="Поддержка в Telegram" 
+        onMouseEnter={e => {
+          e.currentTarget.style.color = '#fff';
+          e.currentTarget.style.borderColor = 'rgba(230,57,80,0.3)';
+          e.currentTarget.style.background = 'rgba(230,57,80,0.08)';
+        }} 
+        onMouseLeave={e => {
+          e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
+          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+          e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+        }}
+      >
+        <Send size={16} />
       </a>
     </header>
   )

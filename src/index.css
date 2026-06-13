@@ -3375,3 +3375,37 @@ html, body, #root {
   opacity: 1;
 }
 
+/* ==========================================================================
+   CYBER HUD SPINNING & PULSING ANIMATIONS
+   ========================================================================== */
+
+@keyframes spin-clockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spin-counter-clockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes logo-v-pulse {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(230, 57, 80, 0.4)); opacity: 0.85; }
+  50% { filter: drop-shadow(0 0 10px rgba(255, 0, 122, 0.95)); opacity: 1; }
+}
+
+.animate-logo-outer-hud {
+  transform-origin: center;
+  animation: spin-clockwise 24s linear infinite;
+}
+
+.animate-logo-inner-hud {
+  transform-origin: center;
+  animation: spin-counter-clockwise 16s linear infinite;
+}
+
+.animate-logo-v-glow {
+  animation: logo-v-pulse 2.5s ease-in-out infinite alternate;
+}
+
+
