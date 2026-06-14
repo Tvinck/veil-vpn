@@ -86,7 +86,7 @@ export const SubscriptionCard = ({ profile, subscription, allSubscriptions }: Pr
           <User size={24} color="#e63950" strokeWidth={2.5} />
         </div>
         <div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', fontFamily: 'var(--font-title)' }}>{profile.username}</h2>
+          <h2 className="sec-profile-name-text" style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', fontFamily: 'var(--font-title)' }}>{profile.username}</h2>
           <p style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.45)', marginTop: '4px' }}>
             Telegram: {profile.telegram_username ? `@${profile.telegram_username}` : 'не привязан'}
           </p>

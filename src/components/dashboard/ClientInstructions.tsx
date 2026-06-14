@@ -42,7 +42,7 @@ const StepCard = ({ step, copiedKey, handleAction }: StepCardProps) => {
 
   return (
     <div 
-      className="glow-card-cyber"
+      className="glow-card-cyber sec-guide-step-wrapper"
       onMouseMove={glow.handleMouseMove}
       onMouseEnter={glow.onMouseEnter}
       onMouseLeave={glow.onMouseLeave}
@@ -57,12 +57,12 @@ const StepCard = ({ step, copiedKey, handleAction }: StepCardProps) => {
       <div style={{ flexShrink: 0, width: '48px', height: '48px', borderRadius: '50%', background: bg, border: `1px solid ${color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <IconComp size={22} color={color} />
       </div>
-      <div>
+      <div style={{ flexGrow: 1, minWidth: 0 }}>
         <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', marginBottom: '10px', fontFamily: 'var(--font-title)' }}>{step.title}</h4>
         <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: step.buttons ? '16px' : '0' }}>{step.desc}</p>
         
         {step.buttons && (
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', position: 'relative', zIndex: 10 }}>
+          <div className="sec-step-buttons-container" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', position: 'relative', zIndex: 10 }}>
             {step.buttons.map((btn: any, i: number) => {
               let BtnIcon = ExternalLink;
               if (btn.iconType === 'plus') BtnIcon = Plus;
@@ -73,6 +73,7 @@ const StepCard = ({ step, copiedKey, handleAction }: StepCardProps) => {
               return (
                 <button 
                   key={i} 
+                  className="sec-step-button"
                   onClick={(e) => {
                     e.stopPropagation();
                     if ('action' in btn) handleAction(btn.action, btn.link);

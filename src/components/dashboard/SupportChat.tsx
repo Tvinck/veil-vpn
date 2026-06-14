@@ -105,6 +105,7 @@ export const SupportChat = ({ profileId }: { profileId: string }) => {
       {!isOpen ? (
         <motion.button 
           key="chat-trigger-btn"
+          className="sec-chat-trigger-mobile"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.8 }}
@@ -128,6 +129,7 @@ export const SupportChat = ({ profileId }: { profileId: string }) => {
         /* Chat Window */
         <motion.div 
           key="chat-window-drawer"
+          className="sec-chat-window-mobile"
           initial={{ opacity: 0, scale: 0.85, y: 30, transformOrigin: 'bottom right' }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.85, y: 30 }}

@@ -17,7 +17,7 @@ export const DashboardHeader = () => {
     <header className="sec-dash-header" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', background: 'rgba(10, 10, 15, 0.75)', backdropFilter: 'blur(20px)' }}>
       <button 
         onClick={() => navigate('/')} 
-        className="sec-dash-back-btn" 
+        className="sec-dash-back-btn sec-back-btn-mobile" 
         style={{ 
           display: 'flex', 
           alignItems: 'center', 
