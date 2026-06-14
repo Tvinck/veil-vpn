@@ -35,31 +35,21 @@ export function useDashboardData(token: string | undefined) {
         return
       }
 
-      // 1. Извлечение подписки по токену
-      const { data: sub, error: subErr } = await supabase
-        .from('vpn_subscriptions')
-        .select('*')
-        .eq('token', token)
-        .single()
+      // 1. Извлечение подписок по токену (используем RPC для безопасности и возможности получения всех подписок)
+      const { data: allSubs, error: rpcErr } = await supabase
+        .rpc('get_user_subscriptions_by_token', { p_token: token })
 
-      if (subErr || !sub) {
+      if (rpcErr || !allSubs || allSubs.length === 0) {
         setErrorMsg('Личный кабинет по этому токену не найден. Проверьте правильность вашей ссылки.')
         setLoading(false)
         return
       }
 
+      // Находим основную подписку, соответствующую токену (или первую)
+      const sub = allSubs.find((s: any) => s.token === token) || allSubs[0]
+
       setSubscription(sub as Subscription)
-
-      // 1.5 Извлечение ВСЕХ подписок этого пользователя (fallback by username if user_id doesn't exist)
-      const { data: allSubs } = await supabase
-        .from('vpn_subscriptions')
-        .select('*')
-        .eq('username', sub.username)
-        .order('created_at', { ascending: true })
-
-      if (allSubs) {
-        setAllSubscriptions(allSubs as Subscription[])
-      }
+      setAllSubscriptions(allSubs as Subscription[])
 
       // 2. Создаем псевдо-профиль из данных подписки
       const prof: Profile = {
