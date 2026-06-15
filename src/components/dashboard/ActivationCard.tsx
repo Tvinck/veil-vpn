@@ -74,7 +74,7 @@ export const ActivationCard = ({ subscription, fetchUserData }: Props) => {
       </div>
       <p className="sec-dash-desc">Купили код продления (ключ доступа) на сторонней площадке? Введите его ниже для мгновенной активации дней.</p>
 
-      <form onSubmit={handleActivateCode} className="sec-input-group" style={{ marginBottom: '16px' }}>
+      <form onSubmit={handleActivateCode} className="sec-input-group sec-input-group-stack" style={{ marginBottom: '16px' }}>
         <input type="text" placeholder="VEIL-XXXXXX" value={activationCode} onChange={(e) => setActivationCode(e.target.value)} className="sec-input" />
         <button type="submit" className="sec-input-btn">Активировать</button>
       </form>

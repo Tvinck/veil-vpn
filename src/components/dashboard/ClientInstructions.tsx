@@ -211,39 +211,12 @@ export const ClientInstructions = ({ subscription }: Props) => {
             const isActive = selectedClient === client;
             const dotColor = client === 'happ' ? '#ffaa00' : '#e63950';
             return (
-              <button key={client} onClick={() => setSelectedClient(client)}
-                style={{
-                  position: 'relative',
-                  padding: '14px 22px',
-                  background: isActive ? 'linear-gradient(135deg, rgba(230, 57, 80, 0.15), rgba(230, 57, 80, 0.02))' : 'rgba(255,255,255,0.01)',
-                  border: `1px solid ${isActive ? 'rgba(230, 57, 80, 0.4)' : 'rgba(255,255,255,0.05)'}`,
-                  borderRadius: '14px',
-                  color: isActive ? '#fff' : 'rgba(255,255,255,0.5)',
-                  fontSize: '0.92rem',
-                  fontWeight: 800,
-                  fontFamily: 'var(--font-title)',
-                  cursor: 'pointer',
-                  transition: 'all 0.25s ease',
-                  whiteSpace: 'nowrap',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  boxShadow: isActive ? '0 0 15px rgba(230, 57, 80, 0.12)' : 'none'
-                }}
-                onMouseEnter={e => {
-                  if (!isActive) {
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!isActive) {
-                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.01)';
-                  }
-                }}
+              <button 
+                key={client} 
+                onClick={() => setSelectedClient(client)}
+                className={`sec-client-tab ${isActive ? 'sec-client-tab-active' : ''}`}
               >
-                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, boxShadow: isActive ? `0 0 8px ${dotColor}` : 'none' }}></div>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: dotColor, boxShadow: isActive ? `0 0 8px ${dotColor}` : 'none', flexShrink: 0 }}></div>
                 <span style={{ zIndex: 1, textTransform: 'capitalize' }}>{client}</span>
               </button>
             )
@@ -252,7 +225,7 @@ export const ClientInstructions = ({ subscription }: Props) => {
       </div>
 
       {/* White List Banner */}
-      <div style={{ marginBottom: '28px', padding: '20px 24px', background: 'linear-gradient(135deg, rgba(230, 57, 80, 0.08) 0%, rgba(230, 57, 80, 0.02) 100%)', border: '1px solid rgba(230, 57, 80, 0.25)', borderRadius: '18px', display: 'flex', gap: '16px', alignItems: 'flex-start', boxShadow: '0 8px 32px rgba(230, 57, 80, 0.03)' }}>
+      <div className="sec-whitelist-banner">
         <ShieldCheck size={24} color="#e63950" style={{ flexShrink: 0, marginTop: '2px' }} />
         <div>
           <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', marginBottom: '6px', fontFamily: 'var(--font-title)' }}>Оптимизация маршрутизации (Белые списки)</h4>
