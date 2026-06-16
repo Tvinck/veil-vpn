@@ -124,7 +124,7 @@ bot.start(async (ctx) => {
       ctx.reply(`👋 Добро пожаловать в <b>Veil Secure</b>!\n\nВаш надежный проводник в свободный интернет.\n\nЕсли у вас уже есть подписка, привяжите её, перейдя по ссылке личного кабинета, полученной от менеджера.`, {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard([
-          [Markup.button.url('Перейти на сайт', 'https://veilvpn.net/')] // compliance note: keep external link
+          [Markup.button.url('Перейти на сайт', 'https://www.veil-vps.online/')] // compliance note: keep external link
         ])
       })
     }
@@ -203,7 +203,7 @@ bot.hears('💳 Продлить/Купить', (ctx) => {
     ctx.reply('<b>Для покупки или продления подписки обратитесь на сайт или к нашему менеджеру:</b>', {
       parse_mode: 'HTML',
       ...Markup.inlineKeyboard([
-        [Markup.button.url('Перейти на сайт', 'https://veilvpn.net/')]
+        [Markup.button.url('Перейти на сайт', 'https://www.veil-vps.online/')]
       ])
     })
   } catch (error) {
@@ -219,7 +219,7 @@ bot.hears('🌐 На сайт', (ctx) => {
   try {
     ctx.reply('Нажмите на кнопку ниже, чтобы открыть сайт Veil Secure.', {
       ...Markup.inlineKeyboard([
-        [Markup.button.url('Перейти на сайт', 'https://veilvpn.net/')]
+        [Markup.button.url('Перейти на сайт', 'https://www.veil-vps.online/')]
       ])
     })
   } catch (error) {
