@@ -259,6 +259,6 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('Error fetching subscription:', err);
-    return res.status(500).send('Internal Server Error');
+    return res.status(500).send(`Internal Server Error: ${err.message || err}\n${err.stack || ''}`);
   }
 }
