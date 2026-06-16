@@ -224,7 +224,7 @@ export default async function handler(req, res) {
 
     // Set auto-update headers for ALL clients
     res.setHeader('profile-update-interval', '24');
-    res.setHeader('profile-title', 'Veil.Net 🚀');
+    res.setHeader('profile-title', 'Veil.Net');
     res.setHeader('Subscription-Userinfo', `upload=0; download=${traffic_used}; total=${totalTraffic}; expire=${expireTimestamp}`);
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
@@ -259,6 +259,6 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('Error fetching subscription:', err);
-    return res.status(500).send(`Internal Server Error: ${err.message || err}\n${err.stack || ''}`);
+    return res.status(500).send('Internal Server Error');
   }
 }
