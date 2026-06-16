@@ -4,10 +4,12 @@ import { fileURLToPath } from 'url';
 import https from 'https';
 import axios from 'axios';
 
-// Загрузка .env из той же папки где лежит sync.js
+// Загрузка .env из корневой папки, а затем из папки tg-bot (для перезаписи)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config({ path: path.resolve(__dirname, '.env') });
+
 
 /**
  * Серверная служба синхронизации X-UI и базы данных Connect (sync.js).
@@ -136,6 +138,15 @@ async function getXUIClients() {
   }
 }
 
+function extractUuid(key) {
+  if (!key) return null;
+  if (key.startsWith('vless://')) {
+    const match = key.match(/vless:\/\/([^@]+)@/);
+    return match ? match[1] : null;
+  }
+  return key;
+}
+
 // ──────────────────────────────────────────────
 // ДОБАВЛЕНИЕ КЛИЕНТА (новый API /panel/api/clients/add)
 // ──────────────────────────────────────────────
@@ -143,9 +154,11 @@ async function addClient(inboundId, sub) {
   try {
     const expiryMs = sub.expires_at ? new Date(sub.expires_at).getTime() : 0;
     const totalBytes = sub.traffic_limit || 0; // 0 = unlimited
+    const clientUuid = extractUuid(sub.subscription_key);
 
     const payload = {
       client: {
+        id: clientUuid,
         email: sub.token,
         totalGB: totalBytes,
         expiryTime: expiryMs,
@@ -159,7 +172,7 @@ async function addClient(inboundId, sub) {
     const res = await api.post('panel/api/clients/add', payload);
 
     if (res.data?.success) {
-      console.log(`  ✅ Добавлен клиент: ${sub.token}`);
+      console.log(`  ✅ Добавлен клиент: ${sub.token} с UUID: ${clientUuid}`);
       return true;
     }
     console.error(`  ❌ Не добавлен ${sub.token}:`, res.data?.msg);

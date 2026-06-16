@@ -37,7 +37,7 @@ function generateClashYaml(proxies, proxyNames, expiryText, trafficUsed, traffic
       short-id: "${p.sid}"
     client-fingerprint: ${p.fp}`).join('\n');
 
-  return \`port: 7890
+  return `port: 7890
 socks-port: 7891
 allow-lan: false
 mode: rule
@@ -60,18 +60,18 @@ dns:
     - 1.1.1.1
 
 proxies:
-  - name: "ℹ️ \${expiryText}"
+  - name: "ℹ️ ${expiryText}"
     type: direct
-  - name: "📊 Трафик: \${(trafficUsed / (1024*1024*1024)).toFixed(2)}GB / \${trafficLimit ? (trafficLimit / (1024*1024*1024)).toFixed(0) + 'GB' : 'Безлимит'}"
+  - name: "📊 Трафик: ${(trafficUsed / (1024*1024*1024)).toFixed(2)}GB / ${trafficLimit ? (trafficLimit / (1024*1024*1024)).toFixed(0) + 'GB' : 'Безлимит'}"
     type: direct
-\${proxiesYaml}
+${proxiesYaml}
 
 proxy-groups:
   - name: "🚀 Выбор сервера"
     type: select
     proxies:
       - "⚡ Автовыбор"
-\${proxyGroupNames}
+${proxyGroupNames}
 
   - name: "⚡ Автовыбор"
     type: url-test
@@ -79,13 +79,13 @@ proxy-groups:
     interval: 300
     tolerance: 50
     proxies:
-\${proxyGroupNames}
+${proxyGroupNames}
 
   - name: "ℹ️ Информация"
     type: select
     proxies:
-      - "ℹ️ \${expiryText}"
-      - "📊 Трафик: \${(trafficUsed / (1024*1024*1024)).toFixed(2)}GB / \${trafficLimit ? (trafficLimit / (1024*1024*1024)).toFixed(0) + 'GB' : 'Безлимит'}"
+      - "ℹ️ ${expiryText}"
+      - "📊 Трафик: ${(trafficUsed / (1024*1024*1024)).toFixed(2)}GB / ${trafficLimit ? (trafficLimit / (1024*1024*1024)).toFixed(0) + 'GB' : 'Безлимит'}"
 
 rules:
   # Split Tunneling для российских сайтов (прямое подключение)
@@ -100,7 +100,16 @@ rules:
   - DOMAIN-KEYWORD,sber,DIRECT
   - DOMAIN-KEYWORD,kinopoisk,DIRECT
   - MATCH,🚀 Выбор сервера
-\`;
+`;
+}
+
+function extractUuid(key) {
+  if (!key) return null;
+  if (key.startsWith('vless://')) {
+    const match = key.match(/vless:\/\/([^@]+)@/);
+    return match ? match[1] : null;
+  }
+  return key;
 }
 
 export default async function handler(req, res) {
@@ -143,62 +152,80 @@ export default async function handler(req, res) {
       daysLeft = Math.max(0, Math.ceil((expDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
     }
 
-    let expiryNodeText = expires_at ? \`⏳ До окончания подписки - \${daysLeft} дней\` : \`⏳ Подписка бессрочная (активна)\`;
+    let expiryNodeText = expires_at ? `⏳ До окончания подписки - ${daysLeft} дней` : `⏳ Подписка бессрочная (активна)`;
     if (isExpired) {
-      expiryNodeText = \`❌ Подписка ИСТЕКЛА (\${new Date(expires_at).toLocaleDateString()}) — продлите её в боте!\`;
+      expiryNodeText = `❌ Подписка ИСТЕКЛА (${new Date(expires_at).toLocaleDateString()}) — продлите её в боте!`;
     } else if (isSuspended) {
-      expiryNodeText = \`❌ Подписка ЗАБЛОКИРОВАНА (статус: \${status}) — свяжитесь с поддержкой!\`;
+      expiryNodeText = `❌ Подписка ЗАБЛОКИРОВАНА (статус: ${status}) — свяжитесь с поддержкой!`;
     }
 
-    // Determine nodes
-    const isUuid = !subscription_key.startsWith('vless://') && !subscription_key.startsWith('vmess://');
+    const clientUuid = extractUuid(subscription_key);
     let proxyConfigs = [];
     
-    if (!isExpired && !isSuspended && subscription_key) {
-      const { data: servers } = await supabase.from('vpn_servers').select('*').order('name');
+    if (!isExpired && !isSuspended && clientUuid) {
+      const { data: dbServers } = await supabase.from('vpn_servers').select('*').order('name');
+      const servers = dbServers || [];
       
-      const serverIp = process.env.VLESS_SERVER_IP;
-      const port = process.env.VLESS_PORT || '443';
-      const pbk = process.env.VLESS_PBK;
-      const sni = process.env.VLESS_SNI || 'yahoo.com';
-      const sid = process.env.VLESS_SID || '';
-      const fp = process.env.VLESS_FP || 'chrome';
-      const flow = process.env.VLESS_FLOW || 'xtls-rprx-vision';
-
-      // Use static regions if DB is empty or lacks IP/PBK
-      const staticRegions = [
-        '🇳🇱 Нидерланды (Premium)',
-        '🇩🇪 Германия (Premium)',
-        '🇫🇮 Финляндия (Premium)',
-        '🇷🇺 Россия (Premium)',
-        '🇮🇳 Индия (Premium)',
-        '🇱🇹 Литва (Premium)',
-        '🇬🇧 Великобритания (Premium)',
-        '🇺🇸 США (Premium)',
-        '🇯🇵 Япония (Premium)'
-      ];
-
-      if (isUuid && serverIp && pbk) {
-        staticRegions.forEach(region => {
-          proxyConfigs.push({
-            name: region,
-            server: serverIp,
-            port: port,
-            uuid: subscription_key,
-            pbk: pbk,
-            sni: sni,
-            sid: sid,
-            fp: fp,
-            flow: flow
-          });
+      if (servers.length > 0) {
+        servers.forEach(s => {
+          if (s.ip_address && s.reality_public_key) {
+            proxyConfigs.push({
+              name: `${getFlagEmoji(s.country_code)} ${s.name || 'Сервер'} (Premium)`,
+              server: s.ip_address,
+              port: s.port || 443,
+              uuid: clientUuid,
+              pbk: s.reality_public_key,
+              sni: s.reality_sni || 'www.intel.com',
+              sid: s.reality_short_id || '',
+              fp: 'chrome',
+              flow: s.reality_flow || 'xtls-rprx-vision'
+            });
+          }
         });
+      } else {
+        // Fallback static configuration if DB has no servers
+        const serverIp = process.env.VLESS_SERVER_IP;
+        const port = process.env.VLESS_PORT || '443';
+        const pbk = process.env.VLESS_PBK;
+        const sni = process.env.VLESS_SNI || 'yahoo.com';
+        const sid = process.env.VLESS_SID || '';
+        const fp = process.env.VLESS_FP || 'chrome';
+        const flow = process.env.VLESS_FLOW || 'xtls-rprx-vision';
+
+        const staticRegions = [
+          '🇳🇱 Нидерланды (Premium)',
+          '🇩🇪 Германия (Premium)',
+          '🇫🇮 Финляндия (Premium)',
+          '🇷🇺 Россия (Premium)',
+          '🇮🇳 Индия (Premium)',
+          '🇱🇹 Литва (Premium)',
+          '🇬🇧 Великобритания (Premium)',
+          '🇺🇸 США (Premium)',
+          '🇯🇵 Япония (Premium)'
+        ];
+
+        if (serverIp && pbk) {
+          staticRegions.forEach(region => {
+            proxyConfigs.push({
+              name: region,
+              server: serverIp,
+              port: port,
+              uuid: clientUuid,
+              pbk: pbk,
+              sni: sni,
+              sid: sid,
+              fp: fp,
+              flow: flow
+            });
+          });
+        }
       }
     }
 
     // Set auto-update headers for ALL clients
     res.setHeader('profile-update-interval', '24');
     res.setHeader('profile-title', 'Veil.Net 🚀');
-    res.setHeader('Subscription-Userinfo', \`upload=0; download=\${traffic_used}; total=\${totalTraffic}; expire=\${expireTimestamp}\`);
+    res.setHeader('Subscription-Userinfo', `upload=0; download=${traffic_used}; total=${totalTraffic}; expire=${expireTimestamp}`);
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
     const userAgent = (req.headers['user-agent'] || '').toLowerCase();
@@ -211,19 +238,19 @@ export default async function handler(req, res) {
       res.setHeader('Content-Type', 'application/yaml; charset=utf-8');
       return res.status(200).send(yamlContent);
     } else {
-      // Return Base64 for standard clients (v2rayNG, Shadowrocket, Streisand)
+      // Return Base64 for standard clients (v2rayNG, Shadowrocket, Streisand, Hiddify)
       let vlessLinks = proxyConfigs.map(p => {
-        return \`vless://\${p.uuid}@\${p.server}:\${p.port}?type=tcp&security=reality&pbk=\${encodeURIComponent(p.pbk)}&sni=\${encodeURIComponent(p.sni)}&fp=\${p.fp}&sid=\${p.sid}&spx=%2F&flow=\${p.flow}#\${encodeURIComponent(p.name)}\`;
+        return `vless://${p.uuid}@${p.server}:${p.port}?type=tcp&security=reality&pbk=${encodeURIComponent(p.pbk)}&sni=${encodeURIComponent(p.sni)}&fp=${p.fp}&sid=${p.sid}&spx=%2F&flow=${p.flow}#${encodeURIComponent(p.name)}`;
       });
 
       // Avoid ping errors on fake nodes by omitting host and using proper remarks
       const fakeNodes = [
-        \`vless://00000000-0000-0000-0000-000000000000@1.1.1.1:80?type=tcp&security=none#\${encodeURIComponent(expiryNodeText)}\`,
-        \`vless://00000000-0000-0000-0000-000000000000@1.1.1.1:80?type=tcp&security=none#\${encodeURIComponent('🛠 Техподдержка - нажмите на Самолетик 🛩')}\`,
-        \`vless://00000000-0000-0000-0000-000000000000@1.1.1.1:80?type=tcp&security=none#\${encodeURIComponent('🌐 veil.net - подключение без ограничений 😎')}\`
+        `vless://00000000-0000-0000-0000-000000000000@1.1.1.1:80?type=tcp&security=none#${encodeURIComponent(expiryNodeText)}`,
+        `vless://00000000-0000-0000-0000-000000000000@1.1.1.1:80?type=tcp&security=none#${encodeURIComponent('🛠 Техподдержка - нажмите на Самолетик 🛩')}`,
+        `vless://00000000-0000-0000-0000-000000000000@1.1.1.1:80?type=tcp&security=none#${encodeURIComponent('🌐 veil.net - подключение без ограничений 😎')}`
       ];
 
-      const finalCopyText = fakeNodes.join('\\n') + '\\n' + vlessLinks.join('\\n');
+      const finalCopyText = fakeNodes.join('\n') + '\n' + vlessLinks.join('\n');
       const base64Data = Buffer.from(finalCopyText).toString('base64');
       
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
