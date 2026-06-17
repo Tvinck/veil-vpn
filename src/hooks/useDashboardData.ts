@@ -63,8 +63,20 @@ export function useDashboardData(token: string | undefined) {
 
       setProfile(prof)
 
-      // 3. Реферальная система временно отключена в новой БД
-      setFriends([])
+      // 3. Реферальная система
+      const { data: dbRefs } = await supabase
+        .from('vpn_referrals')
+        .select('*')
+        .eq('referrer_username', sub.username)
+        .order('created_at', { ascending: false })
+
+      const mappedFriends: Friend[] = (dbRefs || []).map((r: any) => ({
+        name: r.referred_username,
+        status: r.status as 'active' | 'pending',
+        bonus: r.status === 'active' ? `+${r.bonus_days} дней` : 'Ожидает покупки'
+      }))
+
+      setFriends(mappedFriends)
     } catch (err) {
       console.error('Ошибка загрузки данных:', err)
       setErrorMsg('Произошла непредвиденная ошибка при синхронизации с базой данных.')

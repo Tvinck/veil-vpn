@@ -17,6 +17,7 @@ export default async function handler(req, res) {
 
   // Support both POST (JSON body) and GET (query params)
   const uniqueCode = (req.body?.uniqueCode || req.query?.uniqueCode || '').trim();
+  const referrer = (req.body?.referrer || req.query?.referrer || '').trim().toLowerCase();
 
   if (!uniqueCode) {
     return res.status(400).json({ error: 'Параметр uniqueCode обязателен' });
@@ -163,7 +164,25 @@ export default async function handler(req, res) {
       isNew = true;
       resultToken = crypto.randomUUID().replace(/-/g, '');
       const tempKey = crypto.randomUUID(); // sync.js will generate real VLESS key
-      newExpiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+
+      // Check if referrer is valid and not self-referring
+      let referrerValid = false;
+      let referrerSub = null;
+      if (referrer && referrer !== email) {
+        const { data: refSub } = await supabase
+          .from('vpn_subscriptions')
+          .select('*')
+          .eq('username', referrer)
+          .maybeSingle();
+        if (refSub) {
+          referrerSub = refSub;
+          referrerValid = true;
+        }
+      }
+
+      // If referred, referee gets +30 days bonus to their initial purchase duration
+      const refereeBonusDays = referrerValid ? 30 : 0;
+      newExpiresAt = new Date(Date.now() + (durationDays + refereeBonusDays) * 24 * 60 * 60 * 1000);
 
       const { error: insertErr } = await supabase
         .from('vpn_subscriptions')
@@ -187,6 +206,36 @@ export default async function handler(req, res) {
       }
 
       console.log(`Created new subscription for ${email}. Token: ${resultToken}`);
+
+      // Process referrer reward
+      if (referrerValid && referrerSub) {
+        // Extend referrer's subscription by 30 days
+        const refCurrentExpires = new Date(referrerSub.expires_at);
+        const refBaseDate = refCurrentExpires > new Date() ? refCurrentExpires : new Date();
+        const refNewExpiresAt = new Date(refBaseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+        await supabase
+          .from('vpn_subscriptions')
+          .update({
+            expires_at: refNewExpiresAt.toISOString(),
+            status: 'active',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', referrerSub.id);
+
+        // Record the referral relationship in vpn_referrals
+        await supabase
+          .from('vpn_referrals')
+          .insert({
+            id: crypto.randomUUID(),
+            referrer_username: referrer,
+            referred_username: email,
+            status: 'active',
+            bonus_days: 30
+          });
+
+        console.log(`Referral credited! Referrer ${referrer} (+30 days), Referee ${email} (+30 days).`);
+      }
     }
 
     // 4.5 Insert transaction record into vpn_orders

@@ -36,13 +36,18 @@ export default function SuccessPage() {
         setLoading(true)
         setError(null)
 
+        const refParam = localStorage.getItem('veil_referrer') || undefined;
+
         const res = await fetch('/api/ggsel-callback', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          body: JSON.stringify({ uniqueCode: uniquecode })
+          body: JSON.stringify({ 
+            uniqueCode: uniquecode,
+            referrer: refParam
+          })
         });
 
         const json = await res.json();
@@ -50,6 +55,9 @@ export default function SuccessPage() {
         if (!res.ok) {
           throw new Error(json.error || 'Не удалось активировать уникальный код');
         }
+
+        // Clear referrer on success
+        localStorage.removeItem('veil_referrer');
 
         setData(json);
         setLoading(false)

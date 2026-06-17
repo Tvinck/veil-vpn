@@ -3,6 +3,7 @@ import LandingPage from './components/LandingPage'
 import Dashboard from './components/Dashboard'
 import Checkout from './components/Checkout'
 import SuccessPage from './components/SuccessPage'
+import ReferralHandler from './components/ReferralHandler'
 import { CyberBackground } from './components/ui/CyberBackground'
 
 export default function App() {
@@ -18,6 +19,9 @@ export default function App() {
           
           {/* Checkout Page */}
           <Route path="/checkout" element={<Checkout />} />
+          
+          {/* Referral Handler Route */}
+          <Route path="/ref/:referrer" element={<ReferralHandler />} />
           
           {/* GGsel Purchase Success / Activation Page */}
           <Route path="/success" element={<SuccessPage />} />
