@@ -175,7 +175,7 @@ export default async function handler(req, res) {
               port: s.port || 443,
               uuid: clientUuid,
               pbk: s.reality_public_key,
-              sni: s.reality_sni || 'www.intel.com',
+              sni: s.reality_sni || 'gateway.icloud.com',
               sid: s.reality_short_id || '',
               fp: 'chrome',
               flow: s.reality_flow || 'xtls-rprx-vision'
