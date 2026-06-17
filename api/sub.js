@@ -169,7 +169,7 @@ export default async function handler(req, res) {
       if (servers.length > 0) {
         servers.forEach(s => {
           const s_pbk = s.reality_public_key || process.env.VLESS_PBK || 'QScEWDolcox0fyfXNODCepp59KaN5O5WCwLu-QxbL2g';
-          const s_sni = s.reality_sni || process.env.VLESS_SNI || 'yahoo.com';
+          const s_sni = s.reality_sni || process.env.VLESS_SNI || 'www.microsoft.com';
           const s_sid = s.reality_short_id || process.env.VLESS_SID || 'ca';
           const s_flow = s.reality_flow || process.env.VLESS_FLOW || 'xtls-rprx-vision';
           
