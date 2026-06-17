@@ -119,9 +119,10 @@ export const ClientInstructions = ({ subscription }: Props) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [copiedKey, setCopiedKey] = useState(false)
 
+  const subUrl = subscription ? `${window.location.origin}/api/sub?token=${subscription.token}` : ''
+
   const handleCopyKey = () => {
-    if (!subscription) return
-    const subUrl = `${window.location.origin}/api/sub?token=${subscription.token}`
+    if (!subUrl) return
     navigator.clipboard.writeText(subUrl)
     setCopiedKey(true)
     setTimeout(() => setCopiedKey(false), 2000)
@@ -225,7 +226,7 @@ export const ClientInstructions = ({ subscription }: Props) => {
       </div>
 
       {/* White List Banner */}
-      <div className="sec-whitelist-banner">
+      <div className="sec-whitelist-banner" style={{ marginBottom: '24px' }}>
         <ShieldCheck size={24} color="#e63950" style={{ flexShrink: 0, marginTop: '2px' }} />
         <div>
           <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', marginBottom: '6px', fontFamily: 'var(--font-title)' }}>Оптимизация маршрутизации (Белые списки)</h4>
@@ -234,6 +235,68 @@ export const ClientInstructions = ({ subscription }: Props) => {
           </p>
         </div>
       </div>
+
+      {/* 1-Click Quick Import Grid */}
+      {subUrl && (
+        <div style={{ marginBottom: '36px', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '24px', padding: '28px' }}>
+          <h4 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#fff', marginBottom: '10px', fontFamily: 'var(--font-title)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <CloudDownload size={22} color="#e63950" />
+            Быстрый импорт в 1 клик
+          </h4>
+          <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.45)', marginBottom: '20px', lineHeight: 1.5 }}>
+            Выберите ваше приложение ниже, чтобы автоматически импортировать профиль подписки со всеми нашими серверами.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+            {[
+              { name: 'Happ (Hiddify)', link: `happ://add/${subUrl}`, desc: 'Рекомендуется (Кроссплатформенный)', badge: 'Happ / Hiddify', color: '#ffaa00', bg: 'rgba(251, 191, 36, 0.08)' },
+              { name: 'Stash', link: `stash://install-config?url=${encodeURIComponent(subUrl)}`, desc: 'Для iOS / macOS (Clash-клиент)', badge: 'Stash', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.08)' },
+              { name: 'Shadowrocket', link: `shadowrocket://add/${subUrl}`, desc: 'Для iOS / Apple TV (Классика)', badge: 'Shadowrocket', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.08)' },
+              { name: 'Sing-box', link: `sing-box://import-remote-profile?url=${encodeURIComponent(subUrl)}`, desc: 'Оригинальный клиент Sing-box', badge: 'Sing-box', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.08)' },
+              { name: 'Clash / FlClash', link: `clash://install-config?url=${encodeURIComponent(subUrl)}`, desc: 'Для всех Clash-клиентов', badge: 'Clash', color: '#e63950', bg: 'rgba(230, 57, 80, 0.08)' },
+              { name: 'Streisand', link: `streisand://import/${subUrl}`, desc: 'Для iOS / Apple TV (Streisand)', badge: 'Streisand', color: '#f97316', bg: 'rgba(249, 115, 22, 0.08)' }
+            ].map((app) => (
+              <a
+                key={app.name}
+                href={app.link}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  padding: '16px',
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '16px',
+                  textDecoration: 'none',
+                  transition: 'all 0.25s ease',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = app.color;
+                  e.currentTarget.style.background = app.bg;
+                  e.currentTarget.style.boxShadow = `0 6px 20px ${app.color}15`;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)';
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.02)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <span style={{ fontSize: '0.95rem', fontWeight: 800, color: '#fff', fontFamily: 'var(--font-title)' }}>{app.name}</span>
+                  <span style={{ fontSize: '0.68rem', fontWeight: 800, color: app.color, background: `${app.color}15`, padding: '2px 8px', borderRadius: '6px', border: `1px solid ${app.color}30` }}>
+                    {app.badge}
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.4, fontWeight: 500 }}>
+                  {app.desc}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Steps */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

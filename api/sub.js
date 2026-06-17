@@ -33,7 +33,7 @@ function generateClashYaml(proxies, proxyNames, expiryText, trafficUsed, traffic
     udp: true
     servername: ${p.sni}
     grpc-opts:
-      grpc-service-name: ""
+      grpc-service-name: "${p.serviceName || 'grpc'}"
     reality-opts:
       public-key: ${p.pbk}
       short-id: "${p.sid}"
@@ -218,7 +218,7 @@ export default async function handler(req, res) {
               sid: s_sid,
               fp: 'chrome',
               network: 'grpc',
-              serviceName: ''
+              serviceName: 'grpc'
             });
           }
         });
@@ -281,20 +281,17 @@ export default async function handler(req, res) {
       // Возвращаем Base64 для обычных клиентов (v2rayNG, Shadowrocket, Streisand, Hiddify)
       let vlessLinks = proxyConfigs.map(p => {
         if (p.network === 'grpc') {
-          return `vless://${p.uuid}@${p.server}:${p.port}?encryption=none&type=grpc&mode=gun&security=reality&pbk=${encodeURIComponent(p.pbk)}&sni=${encodeURIComponent(p.sni)}&fp=${p.fp}&sid=${p.sid}&spx=%2F#${encodeURIComponent(p.name)}`;
+          return `vless://${p.uuid}@${p.server}:${p.port}?encryption=none&type=grpc&mode=gun&security=reality&pbk=${encodeURIComponent(p.pbk)}&sni=${encodeURIComponent(p.sni)}&fp=${p.fp}&sid=${p.sid}&serviceName=grpc&spx=%2F#${encodeURIComponent(p.name)}`;
         } else {
           return `vless://${p.uuid}@${p.server}:${p.port}?encryption=none&type=tcp&security=reality&pbk=${encodeURIComponent(p.pbk)}&sni=${encodeURIComponent(p.sni)}&fp=${p.fp}&sid=${p.sid}&spx=%2F&flow=${p.flow}#${encodeURIComponent(p.name)}`;
         }
       });
 
-      // Avoid ping errors on fake nodes by pointing them to the real server IP and Port for successful TCP Ping
-      const serverIp = proxyConfigs.length > 0 ? proxyConfigs[0].server : '185.142.99.185';
-      const serverPort = proxyConfigs.length > 0 ? proxyConfigs[0].port : '443';
-      
+      // Avoid V2Box parsing errors (empty password) by using the real client UUID and pointing to local dummy port
       const fakeNodes = [
-        `vless://00000000-0000-0000-0000-000000000000@${serverIp}:${serverPort}?type=tcp&security=none#${encodeURIComponent(expiryNodeText)}`,
-        `vless://00000000-0000-0000-0000-000000000000@${serverIp}:${serverPort}?type=tcp&security=none#${encodeURIComponent('🛠 Техподдержка - нажмите на Самолетик 🛩')}`,
-        `vless://00000000-0000-0000-0000-000000000000@${serverIp}:${serverPort}?type=tcp&security=none#${encodeURIComponent('🌐 veil.net - подключение без ограничений 😎')}`
+        `vless://${clientUuid}@127.0.0.1:10080?type=tcp&security=none#${encodeURIComponent(expiryNodeText)}`,
+        `vless://${clientUuid}@127.0.0.1:10080?type=tcp&security=none#${encodeURIComponent('🛠 Поддержка - в боте @Veil_Vps_bot 🛩')}`,
+        `vless://${clientUuid}@127.0.0.1:10080?type=tcp&security=none#${encodeURIComponent('🌐 veil.net - подключение без ограничений 😎')}`
       ];
 
       const finalCopyText = fakeNodes.join('\n') + '\n' + vlessLinks.join('\n');

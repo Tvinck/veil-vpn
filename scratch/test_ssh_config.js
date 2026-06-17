@@ -1,0 +1,33 @@
+import { Client } from 'ssh2';
+
+const conn = new Client();
+conn.on('ready', () => {
+  console.log('SSH Ready. Reading config.json...');
+  
+  const script = `
+    cat /usr/local/x-ui/bin/config.json
+  `;
+  
+  conn.exec(script, (err, stream) => {
+    if (err) {
+      console.error('Exec error:', err);
+      conn.end();
+      return;
+    }
+    let out = '';
+    stream.on('close', () => {
+      console.log('\n--- CONFIG.JSON CONTENT ---');
+      console.log(out);
+      conn.end();
+    }).on('data', (data) => {
+      out += data;
+    }).stderr.on('data', (data) => {
+      out += data;
+    });
+  });
+}).connect({
+  host: '185.142.99.185',
+  port: 22,
+  username: 'root',
+  password: 'iW@Bz+,dM42Ln+'
+});

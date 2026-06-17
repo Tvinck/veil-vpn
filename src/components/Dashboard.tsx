@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { DashboardHeader } from './dashboard/DashboardHeader'
 import { SubscriptionCard } from './dashboard/SubscriptionCard'
+import { ServerList } from './dashboard/ServerList'
 import { ActivationCard } from './dashboard/ActivationCard'
 import { ReferralProgram } from './dashboard/ReferralProgram'
 import { ClientInstructions } from './dashboard/ClientInstructions'
@@ -150,6 +151,8 @@ export default function Dashboard() {
           subscription={subscription} 
           allSubscriptions={allSubscriptions} 
         />
+
+        <ServerList />
 
         <div className="sec-dash-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px', marginTop: '32px', marginBottom: '48px' }}>
           <ActivationCard 
