@@ -65,6 +65,45 @@ export default async function handler(req, res) {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
+  // 0. Create database log entry
+  let logId = null;
+  try {
+    const { data: logObj } = await supabase
+      .from('vpn_ggsel_logs')
+      .insert({
+        unique_code: uniqueCode,
+        status: 'received'
+      })
+      .select('id')
+      .maybeSingle();
+    logId = logObj?.id;
+  } catch (logErr) {
+    console.error('Failed to create ggsel log entry:', logErr);
+  }
+
+  // Helper to respond and update log status
+  const sendResponse = async (status, payload) => {
+    if (logId) {
+      try {
+        const isSuccess = status === 200;
+        await supabase
+          .from('vpn_ggsel_logs')
+          .update({
+            status: isSuccess ? 'processed' : 'failed',
+            email: payload.email || null,
+            product_id: payload.productId || null,
+            amount: payload.amount || null,
+            error_message: isSuccess ? null : (payload.error || JSON.stringify(payload)),
+            raw_response: payload
+          })
+          .eq('id', logId);
+      } catch (logUpdErr) {
+        console.error('Failed to update ggsel log entry:', logUpdErr);
+      }
+    }
+    return res.status(status).json(payload);
+  };
+
   try {
     // 1. Authenticate with GGsel/Digiseller API
     const timestamp = Math.floor(Date.now() / 1000);
@@ -87,7 +126,7 @@ export default async function handler(req, res) {
     if (!authRes.ok) {
       const authErrText = await authRes.text();
       console.error('GGsel auth request failed:', authRes.status, authErrText);
-      return res.status(500).json({ error: 'Не удалось авторизоваться в GGsel API' });
+      return sendResponse(500, { error: 'Не удалось авторизоваться в GGsel API' });
     }
 
     const authData = await authRes.json();
@@ -95,7 +134,7 @@ export default async function handler(req, res) {
 
     if (!token) {
       console.error('GGsel apilogin returned no token:', authData);
-      return res.status(500).json({ error: 'Не удалось получить токен авторизации GGsel' });
+      return sendResponse(500, { error: 'Не удалось получить токен авторизации GGsel' });
     }
 
     // 2. Verify unique code
@@ -107,14 +146,14 @@ export default async function handler(req, res) {
     if (!verifyRes.ok) {
       const verifyErrText = await verifyRes.text();
       console.error('GGsel code verification request failed:', verifyRes.status, verifyErrText);
-      return res.status(500).json({ error: 'Ошибка при связи с сервером GGsel' });
+      return sendResponse(500, { error: 'Ошибка при связи с сервером GGsel' });
     }
 
     const verifyData = await verifyRes.json();
 
     if (verifyData.retval !== 0) {
       console.warn('GGsel unique code verification failed:', verifyData);
-      return res.status(400).json({ error: verifyData.retdesc || 'Уникальный код недействителен' });
+      return sendResponse(400, { error: verifyData.retdesc || 'Уникальный код недействителен' });
     }
 
     const email = (verifyData.email || '').trim().toLowerCase();
@@ -123,7 +162,7 @@ export default async function handler(req, res) {
 
     if (!email) {
       console.error('GGsel transaction contains no email:', verifyData);
-      return res.status(400).json({ error: 'В транзакции отсутствует email покупателя' });
+      return sendResponse(400, { error: 'В транзакции отсутствует email покупателя' });
     }
 
     // 3. Determine subscription duration based on productId map
@@ -153,7 +192,7 @@ export default async function handler(req, res) {
 
     if (findErr) {
       console.error('Supabase query error:', findErr);
-      return res.status(500).json({ error: 'Ошибка базы данных при поиске подписки' });
+      return sendResponse(500, { error: 'Ошибка базы данных при поиске подписки' });
     }
 
     let resultToken = '';
@@ -177,7 +216,7 @@ export default async function handler(req, res) {
 
       if (updateErr) {
         console.error('Supabase update error:', updateErr);
-        return res.status(500).json({ error: 'Не удалось обновить подписку в базе данных' });
+        return sendResponse(500, { error: 'Не удалось обновить подписку в базе данных' });
       }
 
       resultToken = existingSub.token;
@@ -225,7 +264,7 @@ export default async function handler(req, res) {
 
       if (insertErr) {
         console.error('Supabase insert error:', insertErr);
-        return res.status(500).json({ error: 'Не удалось создать подписку в базе данных' });
+        return sendResponse(500, { error: 'Не удалось создать подписку в базе данных' });
       }
 
       console.log(`Created new subscription for ${email}. Token: ${resultToken}`);
@@ -306,17 +345,19 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({
+    return sendResponse(200, {
       success: true,
       email: email,
       token: resultToken,
       isNew: isNew,
       expiresAt: newExpiresAt.toISOString(),
-      durationDays: durationDays
+      durationDays: durationDays,
+      productId: productId,
+      amount: Number(verifyData.amount)
     });
 
   } catch (error) {
     console.error('GGsel callback handler error:', error);
-    return res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+    return sendResponse(500, { error: 'Внутренняя ошибка сервера' });
   }
 }

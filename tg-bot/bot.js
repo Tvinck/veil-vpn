@@ -12,13 +12,19 @@ dotenv.config({ path: path.resolve(__dirname, '.env') })
 
 
 /**
- * Инициализация Telegram-бота и Supabase клиента.
+ * Инициализация Telegram-бота клиентов и Supabase клиента.
  * Бот подключается к общей базе данных Connect.
  */
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN)
 
 // Подключаем middleware для хранения состояний сессий поддержки в оперативной памяти
 bot.use(session({ defaultSession: () => ({ support_mode: false }) }))
+
+/**
+ * Инициализация Telegram-бота для сотрудников Connect CRM.
+ * Токен предоставлен в настройках интеграции.
+ */
+const staffBot = new Telegraf('8910548080:AAHF8JLeT6BEfvLInsbqnH0WxSzYSDul2X8')
 
 const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY, {
   auth: { persistSession: false },
@@ -354,40 +360,146 @@ bot.on('message', async (ctx) => {
   }
 })
 
+// Переменная кэша ID чата сотрудников Connect CRM
+let staffChatId = null;
+
+/**
+ * Получает ID чата сотрудников Connect CRM из таблицы `vpn_settings`.
+ * 
+ * @returns {Promise<string|null>} ID чата сотрудников
+ */
+async function getStaffChatId() {
+  if (staffChatId) return staffChatId;
+  try {
+    const { data } = await supabase
+      .from('vpn_settings')
+      .select('value')
+      .eq('key', 'staff_chat_id')
+      .maybeSingle();
+    if (data?.value) {
+      staffChatId = data.value;
+    }
+  } catch (err) {
+    console.error('Ошибка при запросе staff_chat_id:', err);
+  }
+  return staffChatId;
+}
+
+// Регистрация чата сотрудников при старте или по команде /setchat
+staffBot.start(async (ctx) => {
+  const chatId = ctx.chat.id;
+  staffChatId = String(chatId);
+  const { error } = await supabase
+    .from('vpn_settings')
+    .upsert({ key: 'staff_chat_id', value: staffChatId });
+
+  if (error) {
+    console.error('Ошибка при сохранении staff_chat_id:', error);
+    ctx.reply('❌ Ошибка при регистрации чата в базе данных.');
+  } else {
+    ctx.reply('✅ Этот чат успешно зарегистрирован для получения уведомлений поддержки Connect!');
+  }
+});
+
+staffBot.command('setchat', async (ctx) => {
+  const chatId = ctx.chat.id;
+  staffChatId = String(chatId);
+  const { error } = await supabase
+    .from('vpn_settings')
+    .upsert({ key: 'staff_chat_id', value: staffChatId });
+
+  if (error) {
+    console.error('Ошибка при сохранении staff_chat_id:', error);
+    ctx.reply('❌ Ошибка при регистрации чата.');
+  } else {
+    ctx.reply('✅ Чат сотрудников успешно привязан!');
+  }
+});
+
 /**
  * Подписка на Realtime-изменения таблицы `support_messages` в Supabase.
- * При отправке ответа сотрудником из панели CRM, бот перенаправляет сообщение пользователю в Telegram.
+ * Реализует:
+ * 1. Пересылку ответов поддержки клиенту в Telegram.
+ * 2. Уведомление сотрудников в чат сотрудников о новых сообщениях от клиентов.
+ * 3. Уведомление сотрудников о том, какой коллега и что ответил клиенту.
  */
 supabase
   .channel('support_messages_channel')
   .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages' }, async (payload) => {
     try {
-      const msg = payload.new
-      // Реагируем только на ответы от сотрудника (is_from_user = false) для проекта Veil Secure
-      if (!msg.is_from_user && msg.project === 'Veil Secure') {
+      const msg = payload.new;
+
+      // 1. Новое сообщение от клиента (is_from_user = true)
+      if (msg.is_from_user) {
+        const targetChatId = await getStaffChatId();
+        if (targetChatId) {
+          const { data: sub } = await supabase
+            .from('vpn_subscriptions')
+            .select('username, telegram_username')
+            .eq('id', msg.user_id)
+            .maybeSingle();
+
+          const clientName = sub ? (sub.username || (sub.telegram_username ? `@${sub.telegram_username}` : 'Клиент')) : 'Клиент';
+          
+          let text = `📥 <b>Новое сообщение в поддержку (${msg.project || 'Veil'})</b>\n`;
+          text += `От: <code>${clientName}</code>\n\n`;
+          text += `${msg.message}`;
+
+          await staffBot.telegram.sendMessage(targetChatId, text, { parse_mode: 'HTML' });
+        }
+      }
+
+      // 2. Ответ от оператора (is_from_user = false)
+      if (!msg.is_from_user) {
+        // А. Пересылаем клиенту в Telegram, если он привязан к боту
         const { data: sub } = await supabase
           .from('vpn_subscriptions')
-          .select('telegram_chat_id')
+          .select('telegram_chat_id, username, telegram_username')
           .eq('id', msg.user_id)
-          .single()
-          
-        if (sub && sub.telegram_chat_id) {
-          await bot.telegram.sendMessage(sub.telegram_chat_id, `👨‍💻 <b>Ответ поддержки:</b>\n\n${msg.message}`, { parse_mode: 'HTML' })
+          .maybeSingle();
+
+        if (sub && sub.telegram_chat_id && msg.project === 'Veil Secure') {
+          await bot.telegram.sendMessage(sub.telegram_chat_id, `👨‍💻 <b>Ответ поддержки:</b>\n\n${msg.message}`, { parse_mode: 'HTML' });
+        }
+
+        // Б. Уведомляем сотрудников в общем чате, кто из коллег ответил клиенту
+        const targetChatId = await getStaffChatId();
+        if (targetChatId) {
+          const sender = msg.sender_email ? `@${msg.sender_email.split('@')[0]}` : 'сотрудник';
+          const clientName = sub ? (sub.username || (sub.telegram_username ? `@${sub.telegram_username}` : 'клиент')) : 'клиент';
+
+          let text = `✍️ Сотрудник <b>${sender}</b> ответил на сообщение для <code>${clientName}</code>:\n\n`;
+          text += msg.message;
+
+          await staffBot.telegram.sendMessage(targetChatId, text, { parse_mode: 'HTML' });
         }
       }
     } catch (error) {
-      console.error('Ошибка при обработке Realtime события (поддержка):', error)
+      console.error('Ошибка при обработке Realtime события (поддержка):', error);
     }
   })
   .subscribe()
 
-// Запуск бота
+// Запуск бота для клиентов
 bot.launch().then(() => {
   console.log('Veil Secure Telegram Bot is running on Connect DB!')
 }).catch(err => {
-  console.error('Ошибка при запуске бота:', err)
+  console.error('Ошибка при запуске клиентского бота:', err)
 })
 
-// Корректное завершение процессов бота
-process.once('SIGINT', () => bot.stop('SIGINT'))
-process.once('SIGTERM', () => bot.stop('SIGTERM'))
+// Запуск бота для сотрудников
+staffBot.launch().then(() => {
+  console.log('Staff Connect Telegram Bot is running!')
+}).catch(err => {
+  console.error('Ошибка при запуске бота сотрудников:', err)
+})
+
+// Корректное завершение процессов ботов
+process.once('SIGINT', () => {
+  bot.stop('SIGINT')
+  staffBot.stop('SIGINT')
+})
+process.once('SIGTERM', () => {
+  bot.stop('SIGTERM')
+  staffBot.stop('SIGTERM')
+})
