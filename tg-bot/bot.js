@@ -219,12 +219,17 @@ bot.hears('🛡 Мои подписки', async (ctx) => {
       }
       
       const uuid = extractUuid(s.subscription_key)
-      let directKey = s.subscription_key
+      let directKeyTCP = s.subscription_key
+      let directKeyGRPC = ''
       if (uuid && (uuid.length === 32 || uuid.length === 36)) {
-        directKey = `vless://${uuid}@${s_ip}:${s_port}?type=tcp&security=reality&pbk=${encodeURIComponent(s_pbk)}&sni=${encodeURIComponent(s_sni)}&fp=chrome&sid=${s_sid}&spx=%2F&flow=${s_flow}#${encodeURIComponent(getFlagEmoji(s_country) + ' ' + s_name)}`
+        directKeyTCP = `vless://${uuid}@${s_ip}:${s_port}?type=tcp&security=reality&pbk=${encodeURIComponent(s_pbk)}&sni=${encodeURIComponent(s_sni)}&fp=chrome&sid=${s_sid}&spx=%2F&flow=${s_flow}#${encodeURIComponent(getFlagEmoji(s_country) + ' ' + s_name + ' (TCP)')}`
+        directKeyGRPC = `vless://${uuid}@${s_ip}:444?type=grpc&mode=gun&security=reality&pbk=${encodeURIComponent(s_pbk)}&sni=github.com&fp=chrome&sid=${s_sid}&spx=%2F#${encodeURIComponent(getFlagEmoji(s_country) + ' ' + s_name + ' (gRPC)')}`
       }
 
-      msg += `🔑 Прямой ключ (для единичного сервера):\n<code>${directKey}</code>\n\n`
+      msg += `🔑 Прямой ключ TCP (Быстрый):\n<code>${directKeyTCP}</code>\n\n`
+      if (directKeyGRPC) {
+        msg += `🔑 Прямой ключ gRPC (Анти-блок):\n<code>${directKeyGRPC}</code>\n\n`
+      }
       
       if (s.token) {
         msg += `🔗 Ссылка на подписку (Рекомендуется для Hiddify / v2rayNG):\n<code>https://www.veil-vps.online/api/sub?token=${s.token}</code>\n\n`

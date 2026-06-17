@@ -150,7 +150,7 @@ function extractUuid(key) {
 // ──────────────────────────────────────────────
 // ДОБАВЛЕНИЕ КЛИЕНТА (новый API /panel/api/clients/add)
 // ──────────────────────────────────────────────
-async function addClient(inboundId, sub) {
+async function addClient(inboundIds, sub) {
   try {
     const expiryMs = sub.expires_at ? new Date(sub.expires_at).getTime() : 0;
     const totalBytes = sub.traffic_limit || 0; // 0 = unlimited
@@ -160,14 +160,14 @@ async function addClient(inboundId, sub) {
       client: {
         id: clientUuid,
         email: sub.token,
-        flow: 'xtls-rprx-vision',
+        flow: 'xtls-rprx-vision', // will be ignored by grpc transport
         totalGB: totalBytes,
         expiryTime: expiryMs,
         limitIp: sub.ip_limit || 3,
         enable: sub.status === 'active',
         tgId: (sub.telegram_username && !isNaN(sub.telegram_username)) ? parseInt(sub.telegram_username, 10) : 0,
       },
-      inboundIds: [inboundId],
+      inboundIds: inboundIds,
     };
 
     const res = await api.post('panel/api/clients/add', payload);
@@ -261,45 +261,49 @@ async function syncTraffic() {
   const inbounds = await getInbounds();
   if (!inbounds) return;
 
-  const vlessInbound = inbounds.find(i => i.protocol === 'vless');
-  if (!vlessInbound) {
-    console.error('❌ Не найден VLESS inbound в X-UI. Создайте его в панели.');
+  const vlessInbounds = inbounds.filter(i => i.protocol === 'vless');
+  if (vlessInbounds.length === 0) {
+    console.error('❌ Не найдены VLESS inbounds в X-UI. Создайте их в панели.');
     return;
   }
+  
+  const vlessInboundIds = vlessInbounds.map(i => i.id);
 
-  console.log(`  📡 Inbound: ${vlessInbound.remark} (id=${vlessInbound.id}, port=${vlessInbound.port})`);
+  vlessInbounds.forEach(i => console.log(`  📡 Inbound: ${i.remark} (id=${i.id}, port=${i.port})`));
 
   // Карта клиентов X-UI: email -> { up, down, enable, total, expiryTime, limitIp }
   const xuiMap = new Map();
-  try {
-    const settings = typeof vlessInbound.settings === 'string' ? JSON.parse(vlessInbound.settings) : vlessInbound.settings;
-    if (settings && settings.clients) {
-      for (const c of settings.clients) {
-        xuiMap.set(c.email, {
-          email: c.email,
-          enable: c.enable,
-          total: c.totalGB || 0,
-          expiryTime: c.expiryTime || 0,
-          limitIp: c.limitIp || 3,
-          flow: c.flow || '',
-          traffic: 0
+  for (const inbound of vlessInbounds) {
+    try {
+      const settings = typeof inbound.settings === 'string' ? JSON.parse(inbound.settings) : inbound.settings;
+      if (settings && settings.clients) {
+        for (const c of settings.clients) {
+          xuiMap.set(c.email, {
+            email: c.email,
+            enable: c.enable,
+            total: c.totalGB || 0,
+            expiryTime: c.expiryTime || 0,
+            limitIp: c.limitIp || 3,
+            flow: c.flow || '',
+            traffic: 0
+          });
+        }
+      }
+    } catch (err) {
+      console.error('⚠️ Ошибка парсинга settings inbound:', err.message);
+    }
+
+    if (inbound.clientStats) {
+      for (const s of inbound.clientStats) {
+        const existing = xuiMap.get(s.email) || {};
+        xuiMap.set(s.email, {
+          ...existing,
+          traffic: (existing.traffic || 0) + s.up + s.down,
+          enable: s.enable !== undefined ? s.enable : existing.enable,
+          total: s.total !== undefined ? s.total : existing.total,
+          expiryTime: s.expiryTime !== undefined ? s.expiryTime : existing.expiryTime
         });
       }
-    }
-  } catch (err) {
-    console.error('⚠️ Ошибка парсинга settings inbound:', err.message);
-  }
-
-  if (vlessInbound.clientStats) {
-    for (const s of vlessInbound.clientStats) {
-      const existing = xuiMap.get(s.email) || {};
-      xuiMap.set(s.email, {
-        ...existing,
-        traffic: s.up + s.down,
-        enable: s.enable !== undefined ? s.enable : existing.enable,
-        total: s.total !== undefined ? s.total : existing.total,
-        expiryTime: s.expiryTime !== undefined ? s.expiryTime : existing.expiryTime
-      });
     }
   }
 
@@ -322,7 +326,7 @@ async function syncTraffic() {
       // Клиента нет в X-UI — добавляем, если он активен и не истек
       const isExpired = sub.expires_at && new Date(sub.expires_at) < new Date();
       if (sub.status === 'active' && !isExpired) {
-        const ok = await addClient(vlessInbound.id, sub);
+        const ok = await addClient(vlessInboundIds, sub);
         if (ok) added++;
       }
     } else {

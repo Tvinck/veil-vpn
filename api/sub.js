@@ -21,7 +21,25 @@ function getFlagEmoji(countryCode) {
  */
 function generateClashYaml(proxies, proxyNames, expiryText, trafficUsed, trafficLimit) {
   const proxyGroupNames = proxyNames.map(n => `      - "${n}"`).join('\n');
-  const proxiesYaml = proxies.map(p => `  - name: "${p.name}"
+  const proxiesYaml = proxies.map(p => {
+    if (p.network === 'grpc') {
+      return `  - name: "${p.name}"
+    type: vless
+    server: ${p.server}
+    port: ${p.port}
+    uuid: ${p.uuid}
+    network: grpc
+    tls: true
+    udp: true
+    servername: ${p.sni}
+    grpc-opts:
+      grpc-service-name: ""
+    reality-opts:
+      public-key: ${p.pbk}
+      short-id: "${p.sid}"
+    client-fingerprint: ${p.fp}`;
+    } else {
+      return `  - name: "${p.name}"
     type: vless
     server: ${p.server}
     port: ${p.port}
@@ -35,7 +53,9 @@ function generateClashYaml(proxies, proxyNames, expiryText, trafficUsed, traffic
     reality-opts:
       public-key: ${p.pbk}
       short-id: "${p.sid}"
-    client-fingerprint: ${p.fp}`).join('\n');
+    client-fingerprint: ${p.fp}`;
+    }
+  }).join('\n');
 
   return `port: 7890
 socks-port: 7891
@@ -174,8 +194,9 @@ export default async function handler(req, res) {
           const s_flow = s.reality_flow || process.env.VLESS_FLOW || 'xtls-rprx-vision';
           
           if (s.ip_address && s_pbk) {
+            // TCP
             proxyConfigs.push({
-              name: `${getFlagEmoji(s.country_code)} ${s.name || 'Сервер'} (Premium)`,
+              name: `${getFlagEmoji(s.country_code)} ${s.name || 'Сервер'} (TCP)`,
               server: s.ip_address,
               port: s.port || 443,
               uuid: clientUuid,
@@ -183,7 +204,21 @@ export default async function handler(req, res) {
               sni: s_sni,
               sid: s_sid,
               fp: 'chrome',
-              flow: s_flow
+              flow: s_flow,
+              network: 'tcp'
+            });
+            // gRPC
+            proxyConfigs.push({
+              name: `${getFlagEmoji(s.country_code)} ${s.name || 'Сервер'} (gRPC)`,
+              server: s.ip_address,
+              port: 444,
+              uuid: clientUuid,
+              pbk: s_pbk,
+              sni: 'github.com',
+              sid: s_sid,
+              fp: 'chrome',
+              network: 'grpc',
+              serviceName: ''
             });
           }
         });
@@ -245,7 +280,11 @@ export default async function handler(req, res) {
     } else {
       // Возвращаем Base64 для обычных клиентов (v2rayNG, Shadowrocket, Streisand, Hiddify)
       let vlessLinks = proxyConfigs.map(p => {
-        return `vless://${p.uuid}@${p.server}:${p.port}?type=tcp&security=reality&pbk=${encodeURIComponent(p.pbk)}&sni=${encodeURIComponent(p.sni)}&fp=${p.fp}&sid=${p.sid}&spx=%2F&flow=${p.flow}#${encodeURIComponent(p.name)}`;
+        if (p.network === 'grpc') {
+          return `vless://${p.uuid}@${p.server}:${p.port}?type=grpc&mode=gun&security=reality&pbk=${encodeURIComponent(p.pbk)}&sni=${encodeURIComponent(p.sni)}&fp=${p.fp}&sid=${p.sid}&spx=%2F#${encodeURIComponent(p.name)}`;
+        } else {
+          return `vless://${p.uuid}@${p.server}:${p.port}?type=tcp&security=reality&pbk=${encodeURIComponent(p.pbk)}&sni=${encodeURIComponent(p.sni)}&fp=${p.fp}&sid=${p.sid}&spx=%2F&flow=${p.flow}#${encodeURIComponent(p.name)}`;
+        }
       });
 
       // Avoid ping errors on fake nodes by pointing them to the real server IP and Port for successful TCP Ping
