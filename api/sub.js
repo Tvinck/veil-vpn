@@ -168,17 +168,22 @@ export default async function handler(req, res) {
       
       if (servers.length > 0) {
         servers.forEach(s => {
-          if (s.ip_address && s.reality_public_key) {
+          const s_pbk = s.reality_public_key || process.env.VLESS_PBK || 'QScEWDolcox0fyfXNODCepp59KaN5O5WCwLu-QxbL2g';
+          const s_sni = s.reality_sni || process.env.VLESS_SNI || 'yahoo.com';
+          const s_sid = s.reality_short_id || process.env.VLESS_SID || 'ca';
+          const s_flow = s.reality_flow || process.env.VLESS_FLOW || 'xtls-rprx-vision';
+          
+          if (s.ip_address && s_pbk) {
             proxyConfigs.push({
               name: `${getFlagEmoji(s.country_code)} ${s.name || 'Сервер'} (Premium)`,
               server: s.ip_address,
               port: s.port || 443,
               uuid: clientUuid,
-              pbk: s.reality_public_key,
-              sni: s.reality_sni || 'gateway.icloud.com',
-              sid: s.reality_short_id || '',
+              pbk: s_pbk,
+              sni: s_sni,
+              sid: s_sid,
               fp: 'chrome',
-              flow: s.reality_flow || 'xtls-rprx-vision'
+              flow: s_flow
             });
           }
         });
