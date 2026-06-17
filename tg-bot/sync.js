@@ -160,6 +160,7 @@ async function addClient(inboundId, sub) {
       client: {
         id: clientUuid,
         email: sub.token,
+        flow: 'xtls-rprx-vision',
         totalGB: totalBytes,
         expiryTime: expiryMs,
         limitIp: sub.ip_limit || 3,
@@ -280,6 +281,7 @@ async function syncTraffic() {
           total: c.totalGB || 0,
           expiryTime: c.expiryTime || 0,
           limitIp: c.limitIp || 3,
+          flow: c.flow || '',
           traffic: 0
         });
       }
@@ -338,19 +340,21 @@ async function syncTraffic() {
       const subTrafficLimit = sub.traffic_limit || 0;
       const subIpLimit = sub.ip_limit || 3;
 
-      // Проверяем, изменились ли параметры (статус, лимит трафика, срок действия или лимит IP)
+      // Проверяем, изменились ли параметры (статус, лимит трафика, срок действия, лимит IP или поток)
       const statusChanged = xuiClient.enable !== shouldEnable;
       const trafficLimitChanged = xuiClient.total !== subTrafficLimit;
       const expiryChanged = Math.abs((xuiClient.expiryTime || 0) - subExpiryMs) > 1000;
       const limitIpChanged = xuiClient.limitIp !== subIpLimit;
+      const flowChanged = xuiClient.flow !== 'xtls-rprx-vision';
 
-      if (statusChanged || trafficLimitChanged || expiryChanged || limitIpChanged) {
-        console.log(`  ⚙️ Изменились параметры для ${sub.token}: statusChanged=${statusChanged}, trafficLimitChanged=${trafficLimitChanged}, expiryChanged=${expiryChanged}, limitIpChanged=${limitIpChanged}`);
+      if (statusChanged || trafficLimitChanged || expiryChanged || limitIpChanged || flowChanged) {
+        console.log(`  ⚙️ Изменились параметры для ${sub.token}: statusChanged=${statusChanged}, trafficLimitChanged=${trafficLimitChanged}, expiryChanged=${expiryChanged}, limitIpChanged=${limitIpChanged}, flowChanged=${flowChanged}`);
         const ok = await updateClientInXUI(sub.token, {
           enable: shouldEnable,
           totalGB: subTrafficLimit,
           expiryTime: subExpiryMs,
-          limitIp: subIpLimit
+          limitIp: subIpLimit,
+          flow: 'xtls-rprx-vision'
         });
         if (ok && statusChanged) {
           if (!shouldEnable) {
