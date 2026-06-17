@@ -22,6 +22,7 @@ const SYNC_ENV  = path.resolve(__dirname, '.env');
 const BOT_FILE  = path.resolve(__dirname, 'tg-bot/bot.js');
 const BOT_ENV   = path.resolve(__dirname, 'tg-bot/.env');
 const MONITOR_FILE = path.resolve(__dirname, 'tg-bot/monitor.js');
+const SUB_SERVER_FILE = path.resolve(__dirname, 'tg-bot/sub_server.js');
 
 // Загружаем переменные окружения из локального .env файла
 const envPath = path.resolve(__dirname, '.env');
@@ -119,9 +120,10 @@ async function deploy() {
     conn.sftp((err, s) => err ? reject(err) : resolve(s));
   });
 
-  console.log('\n📁 Загружаем файлы для bazzar-sync через SFTP...');
+  console.log('\n📁 Загружаем файлы для bazzar-sync и sub_server через SFTP...');
   await sftpUpload(sftp, SYNC_FILE,  `${SYNC_REMOTE_DIR}/sync.js`);
   await sftpUpload(sftp, SYNC_ENV,   `${SYNC_REMOTE_DIR}/.env`);
+  await sftpUpload(sftp, SUB_SERVER_FILE, `${SYNC_REMOTE_DIR}/sub_server.js`);
   await sftpUpload(sftp, null, `${SYNC_REMOTE_DIR}/package.json`, packageJson);
 
   console.log('\n📁 Загружаем файлы для veil-bot и monitor через SFTP...');
@@ -143,6 +145,10 @@ async function deploy() {
   await execCmd(conn, `pm2 delete bazzar-sync 2>/dev/null || true`);
   await execCmd(conn, `cd ${SYNC_REMOTE_DIR} && pm2 start sync.js --name bazzar-sync --interpreter node`);
 
+  console.log('\n🔄 Перезапускаем bazzar-sub-server в PM2...');
+  await execCmd(conn, `pm2 delete bazzar-sub-server 2>/dev/null || true`);
+  await execCmd(conn, `cd ${SYNC_REMOTE_DIR} && pm2 start sub_server.js --name bazzar-sub-server --interpreter node`);
+
   console.log('\n🔄 Перезапускаем veil-bot в PM2...');
   await execCmd(conn, `pm2 delete veil-bot 2>/dev/null || true`);
   await execCmd(conn, `cd ${BOT_REMOTE_DIR} && pm2 start bot.js --name veil-bot --interpreter node`);
@@ -159,6 +165,9 @@ async function deploy() {
 
   console.log('\n📋 Логи bazzar-sync:');
   await execCmd(conn, `pm2 logs bazzar-sync --lines 20 --nostream`);
+
+  console.log('\n📋 Логи bazzar-sub-server:');
+  await execCmd(conn, `pm2 logs bazzar-sub-server --lines 20 --nostream`);
 
   console.log('\n📋 Логи veil-bot:');
   await execCmd(conn, `pm2 logs veil-bot --lines 20 --nostream`);
