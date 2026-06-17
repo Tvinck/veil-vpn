@@ -237,16 +237,23 @@ async function syncTraffic() {
       const settings = typeof inbound.settings === 'string' ? JSON.parse(inbound.settings) : inbound.settings;
       if (settings && settings.clients) {
         for (const c of settings.clients) {
-          xuiMap.set(c.email, {
-            email: c.email,
-            inboundId: inbound.id,
-            enable: c.enable,
-            total: c.totalGB || 0,
-            expiryTime: c.expiryTime || 0,
-            limitIp: c.limitIp || 3,
-            flow: c.flow || '',
-            traffic: 0
-          });
+          if (!xuiMap.has(c.email)) {
+            xuiMap.set(c.email, {
+              email: c.email,
+              enable: c.enable,
+              total: c.totalGB || 0,
+              expiryTime: c.expiryTime || 0,
+              limitIp: c.limitIp || 3,
+              flow: c.flow || '',
+              inboundIds: [],
+              traffic: 0
+            });
+          }
+          const existing = xuiMap.get(c.email);
+          existing.inboundIds.push(inbound.id);
+          if (c.flow) {
+            existing.flow = c.flow;
+          }
         }
       }
     } catch (err) {
@@ -285,8 +292,14 @@ async function syncTraffic() {
     // --- 1. Синхронизируем TCP (email: sub.token) ---
     const tcpEmail = sub.token;
     const tcpClient = xuiMap.get(tcpEmail);
+    const tcpIncorrectInbounds = tcpClient && 
+      (tcpClient.inboundIds.length !== 1 || tcpClient.inboundIds[0] !== tcpInbound.id);
 
-    if (!tcpClient) {
+    if (!tcpClient || tcpIncorrectInbounds) {
+      if (tcpClient) {
+        console.log(`  🗑️ Удаляем TCP ${tcpEmail} из-за неверных inbounds: [${tcpClient.inboundIds.join(', ')}] (должен быть только ${tcpInbound.id})`);
+        await deleteClientFromXUI(tcpEmail);
+      }
       if (shouldEnable) {
         const ok = await addClient([tcpInbound.id], sub, tcpEmail, 'xtls-rprx-vision');
         if (ok) added++;
@@ -314,8 +327,14 @@ async function syncTraffic() {
     // --- 2. Синхронизируем gRPC (email: sub.token + "-grpc") ---
     const grpcEmail = sub.token + '-grpc';
     const grpcClient = xuiMap.get(grpcEmail);
+    const grpcIncorrectInbounds = grpcClient && 
+      (grpcClient.inboundIds.length !== 1 || grpcClient.inboundIds[0] !== grpcInbound.id);
 
-    if (!grpcClient) {
+    if (!grpcClient || grpcIncorrectInbounds) {
+      if (grpcClient) {
+        console.log(`  🗑️ Удаляем gRPC ${grpcEmail} из-за неверных inbounds: [${grpcClient.inboundIds.join(', ')}] (должен быть только ${grpcInbound.id})`);
+        await deleteClientFromXUI(grpcEmail);
+      }
       if (shouldEnable) {
         const ok = await addClient([grpcInbound.id], sub, grpcEmail, '');
         if (ok) added++;
@@ -339,6 +358,7 @@ async function syncTraffic() {
         if (ok && statusChanged && !shouldEnable) deactivated++;
       }
     }
+
 
     // --- 3. Синхронизируем трафик обратно в Supabase ---
     const tcpTraffic = tcpClient ? tcpClient.traffic : 0;
