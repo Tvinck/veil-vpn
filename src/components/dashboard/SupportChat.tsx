@@ -69,6 +69,12 @@ export const SupportChat = ({ profileId }: { profileId: string }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isOpen])
 
+  /**
+   * Отправляет текстовое сообщение клиента в службу поддержки.
+   * Сообщение сохраняется локально для мгновенного отображения, а затем записывается в Supabase.
+   * 
+   * @param {React.FormEvent} e - Событие отправки формы
+   */
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newMessage.trim() || !profileId) return
@@ -101,6 +107,12 @@ export const SupportChat = ({ profileId }: { profileId: string }) => {
     }
   }
 
+  /**
+   * Загружает выбранный файл-изображение (скриншот) в Supabase Storage bucket
+   * и отправляет в чат специальное текстовое сообщение с ссылкой на картинку.
+   * 
+   * @param {React.ChangeEvent<HTMLInputElement>} e - Событие изменения инпута выбора файла
+   */
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !profileId) return;
