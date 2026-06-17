@@ -383,17 +383,67 @@ async function syncTraffic() {
   console.log(`✅ Готово. Добавлено: ${added}, трафик обновлён: ${updated}, деактивировано: ${deactivated}, удалено сиротских клиентов: ${deleted}`);
 }
 
+// Очередь и дебаунс для синхронизации
+let isSyncing = false;
+let pendingSync = false;
+let debounceTimeout = null;
+
+async function executeSync() {
+  if (isSyncing) {
+    pendingSync = true;
+    console.log('⏳ Синхронизация уже выполняется. Запрос поставлен в очередь.');
+    return;
+  }
+  
+  isSyncing = true;
+  try {
+    await syncTraffic();
+  } catch (err) {
+    console.error('❌ Ошибка во время syncTraffic:', err.message);
+  } finally {
+    isSyncing = false;
+    if (pendingSync) {
+      pendingSync = false;
+      console.log('🔄 Запуск отложенной синхронизации из очереди через 5 секунд...');
+      setTimeout(executeSync, 5000);
+    }
+  }
+}
+
+function triggerSync() {
+  if (debounceTimeout) clearTimeout(debounceTimeout);
+  debounceTimeout = setTimeout(() => {
+    debounceTimeout = null;
+    executeSync();
+  }, 3000); // 3 секунды дебаунс
+}
+
 // Запуск сразу + каждые 2 минуты
-syncTraffic().catch(console.error);
-setInterval(() => syncTraffic().catch(console.error), 2 * 60 * 1000);
+executeSync().catch(console.error);
+setInterval(() => executeSync().catch(console.error), 2 * 60 * 1000);
 
 // Подписка на изменения в реальном времени
 console.log('🔌 Подключаемся к Supabase Realtime...');
 supabase
   .channel('vpn_subs_changes')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'vpn_subscriptions' }, (payload) => {
+    if (payload.eventType === 'UPDATE') {
+      const oldVal = payload.old || {};
+      const newVal = payload.new || {};
+      
+      const importantKeys = ['status', 'expires_at', 'traffic_limit', 'subscription_key', 'token', 'ip_limit'];
+      const hasImportantChange = importantKeys.some(key => {
+        return JSON.stringify(oldVal[key]) !== JSON.stringify(newVal[key]);
+      });
+      
+      if (!hasImportantChange) {
+        // Игнорируем обновление, так как изменились только служебные данные (например, трафик или дата обновления)
+        return;
+      }
+    }
+    
     console.log('⚡ Получено realtime-изменение в таблице vpn_subscriptions:', payload.eventType);
-    syncTraffic().catch(console.error);
+    triggerSync();
   })
   .subscribe((status) => {
     console.log(`🔌 Статус Realtime-подключения: ${status}`);

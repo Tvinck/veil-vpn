@@ -363,8 +363,8 @@ supabase
   .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages' }, async (payload) => {
     try {
       const msg = payload.new
-      // Реагируем только на ответы от сотрудника (is_from_user = false)
-      if (!msg.is_from_user) {
+      // Реагируем только на ответы от сотрудника (is_from_user = false) для проекта Veil Secure
+      if (!msg.is_from_user && msg.project === 'Veil Secure') {
         const { data: sub } = await supabase
           .from('vpn_subscriptions')
           .select('telegram_chat_id')
