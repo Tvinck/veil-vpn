@@ -281,9 +281,9 @@ export default async function handler(req, res) {
       // Возвращаем Base64 для обычных клиентов (v2rayNG, Shadowrocket, Streisand, Hiddify)
       let vlessLinks = proxyConfigs.map(p => {
         if (p.network === 'grpc') {
-          return `vless://${p.uuid}@${p.server}:${p.port}?type=grpc&mode=gun&security=reality&pbk=${encodeURIComponent(p.pbk)}&sni=${encodeURIComponent(p.sni)}&fp=${p.fp}&sid=${p.sid}&spx=%2F#${encodeURIComponent(p.name)}`;
+          return `vless://${p.uuid}@${p.server}:${p.port}?encryption=none&type=grpc&mode=gun&security=reality&pbk=${encodeURIComponent(p.pbk)}&sni=${encodeURIComponent(p.sni)}&fp=${p.fp}&sid=${p.sid}&spx=%2F#${encodeURIComponent(p.name)}`;
         } else {
-          return `vless://${p.uuid}@${p.server}:${p.port}?type=tcp&security=reality&pbk=${encodeURIComponent(p.pbk)}&sni=${encodeURIComponent(p.sni)}&fp=${p.fp}&sid=${p.sid}&spx=%2F&flow=${p.flow}#${encodeURIComponent(p.name)}`;
+          return `vless://${p.uuid}@${p.server}:${p.port}?encryption=none&type=tcp&security=reality&pbk=${encodeURIComponent(p.pbk)}&sni=${encodeURIComponent(p.sni)}&fp=${p.fp}&sid=${p.sid}&spx=%2F&flow=${p.flow}#${encodeURIComponent(p.name)}`;
         }
       });
 

@@ -222,8 +222,8 @@ bot.hears('🛡 Мои подписки', async (ctx) => {
       let directKeyTCP = s.subscription_key
       let directKeyGRPC = ''
       if (uuid && (uuid.length === 32 || uuid.length === 36)) {
-        directKeyTCP = `vless://${uuid}@${s_ip}:${s_port}?type=tcp&security=reality&pbk=${encodeURIComponent(s_pbk)}&sni=${encodeURIComponent(s_sni)}&fp=chrome&sid=${s_sid}&spx=%2F&flow=${s_flow}#${encodeURIComponent(getFlagEmoji(s_country) + ' ' + s_name + ' (TCP)')}`
-        directKeyGRPC = `vless://${uuid}@${s_ip}:444?type=grpc&mode=gun&security=reality&pbk=${encodeURIComponent(s_pbk)}&sni=github.com&fp=chrome&sid=${s_sid}&spx=%2F#${encodeURIComponent(getFlagEmoji(s_country) + ' ' + s_name + ' (gRPC)')}`
+        directKeyTCP = `vless://${uuid}@${s_ip}:${s_port}?encryption=none&type=tcp&security=reality&pbk=${encodeURIComponent(s_pbk)}&sni=${encodeURIComponent(s_sni)}&fp=chrome&sid=${s_sid}&spx=%2F&flow=${s_flow}#${encodeURIComponent(getFlagEmoji(s_country) + ' ' + s_name + ' (TCP)')}`
+        directKeyGRPC = `vless://${uuid}@${s_ip}:444?encryption=none&type=grpc&mode=gun&security=reality&pbk=${encodeURIComponent(s_pbk)}&sni=github.com&fp=chrome&sid=${s_sid}&spx=%2F#${encodeURIComponent(getFlagEmoji(s_country) + ' ' + s_name + ' (gRPC)')}`
       }
 
       msg += `🔑 Прямой ключ TCP (Быстрый):\n<code>${directKeyTCP}</code>\n\n`
