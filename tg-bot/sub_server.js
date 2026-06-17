@@ -1,4 +1,6 @@
 import http from 'http';
+import https from 'https';
+import fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -149,9 +151,26 @@ function extractUuid(key) {
   return key;
 }
 
-const server = http.createServer(async (req, res) => {
+const requestHandler = async (req, res) => {
   try {
     const reqUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    
+    // ACME challenge handler for certbot
+    if (reqUrl.pathname.startsWith('/.well-known/acme-challenge/')) {
+      const fileName = path.basename(reqUrl.pathname);
+      const fullPath = path.join('/opt/bazzar-sync/.well-known/acme-challenge', fileName);
+      try {
+        const content = fs.readFileSync(fullPath, 'utf8');
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.end(content);
+        return;
+      } catch (e) {
+        res.statusCode = 404;
+        res.end('Not Found');
+        return;
+      }
+    }
     
     // Поддерживаем как /api/sub так и /sub
     if (reqUrl.pathname !== '/api/sub' && reqUrl.pathname !== '/sub') {
@@ -284,9 +303,26 @@ const server = http.createServer(async (req, res) => {
     res.statusCode = 500;
     res.end('Internal Server Error');
   }
+};
+
+// Start HTTP Server on port 80
+const httpServer = http.createServer(requestHandler);
+httpServer.listen(80, '0.0.0.0', () => {
+  console.log('✅ HTTP Subscription server is running on port 80');
 });
 
-const PORT = 80;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Subscription server is running on port ${PORT}`);
-});
+// Try to start HTTPS Server on port 2053
+let sslOptions = {};
+try {
+  sslOptions = {
+    key: fs.readFileSync('/etc/letsencrypt/live/185-142-99-185.sslip.io/privkey.pem'),
+    cert: fs.readFileSync('/etc/letsencrypt/live/185-142-99-185.sslip.io/fullchain.pem')
+  };
+  
+  const httpsServer = https.createServer(sslOptions, requestHandler);
+  httpsServer.listen(2053, '0.0.0.0', () => {
+    console.log('🔒 HTTPS Subscription server is running on port 2053');
+  });
+} catch (e) {
+  console.log('⚠️ HTTPS certificate not found or failed to load. Running HTTP-only on port 80.');
+}

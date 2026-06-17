@@ -232,7 +232,7 @@ bot.hears('🛡 Мои подписки', async (ctx) => {
       }
       
       if (s.token) {
-        msg += `🔗 Ссылка на подписку (Рекомендуется для Hiddify / v2rayNG):\n<code>http://185.142.99.185/api/sub?token=${s.token}</code>\n\n`
+        msg += `🔗 Ссылка на подписку (Рекомендуется для Hiddify / v2rayNG):\n<code>https://185-142-99-185.sslip.io:2053/api/sub?token=${s.token}</code>\n\n`
       }
     })
 

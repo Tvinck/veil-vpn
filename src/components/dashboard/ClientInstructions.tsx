@@ -119,7 +119,7 @@ export const ClientInstructions = ({ subscription }: Props) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [copiedKey, setCopiedKey] = useState(false)
 
-  const subUrl = subscription ? `http://185.142.99.185/api/sub?token=${subscription.token}` : ''
+  const subUrl = subscription ? `https://185-142-99-185.sslip.io:2053/api/sub?token=${subscription.token}` : ''
 
   const handleCopyKey = () => {
     if (!subUrl) return
