@@ -166,7 +166,7 @@ export default function Checkout() {
             <span>Назад</span>
           </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '34px', height: '34px', background: red, borderRadius: '9px', display: 'flex', alignItems: 'center', justify: 'center', boxShadow: '0 0 18px rgba(230,57,80,0.55)' }}>
+            <div style={{ width: '34px', height: '34px', background: red, borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 18px rgba(230,57,80,0.55)' }}>
               <Shield size={18} color="#fff" strokeWidth={2.5} />
             </div>
             <span style={{ fontFamily: 'var(--font-cyber)', fontSize: '1.25rem', fontWeight: 900, letterSpacing: '2px', color: '#fff' }}>
