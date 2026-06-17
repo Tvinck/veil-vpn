@@ -243,16 +243,19 @@ export default async function handler(req, res) {
       res.setHeader('Content-Type', 'application/yaml; charset=utf-8');
       return res.status(200).send(yamlContent);
     } else {
-      // Return Base64 for standard clients (v2rayNG, Shadowrocket, Streisand, Hiddify)
+      // Возвращаем Base64 для обычных клиентов (v2rayNG, Shadowrocket, Streisand, Hiddify)
       let vlessLinks = proxyConfigs.map(p => {
         return `vless://${p.uuid}@${p.server}:${p.port}?type=tcp&security=reality&pbk=${encodeURIComponent(p.pbk)}&sni=${encodeURIComponent(p.sni)}&fp=${p.fp}&sid=${p.sid}&spx=%2F&flow=${p.flow}#${encodeURIComponent(p.name)}`;
       });
 
-      // Avoid ping errors on fake nodes by omitting host and using proper remarks
+      // Avoid ping errors on fake nodes by pointing them to the real server IP and Port for successful TCP Ping
+      const serverIp = proxyConfigs.length > 0 ? proxyConfigs[0].server : '185.142.99.185';
+      const serverPort = proxyConfigs.length > 0 ? proxyConfigs[0].port : '443';
+      
       const fakeNodes = [
-        `vless://00000000-0000-0000-0000-000000000000@1.1.1.1:80?type=tcp&security=none#${encodeURIComponent(expiryNodeText)}`,
-        `vless://00000000-0000-0000-0000-000000000000@1.1.1.1:80?type=tcp&security=none#${encodeURIComponent('🛠 Техподдержка - нажмите на Самолетик 🛩')}`,
-        `vless://00000000-0000-0000-0000-000000000000@1.1.1.1:80?type=tcp&security=none#${encodeURIComponent('🌐 veil.net - подключение без ограничений 😎')}`
+        `vless://00000000-0000-0000-0000-000000000000@${serverIp}:${serverPort}?type=tcp&security=none#${encodeURIComponent(expiryNodeText)}`,
+        `vless://00000000-0000-0000-0000-000000000000@${serverIp}:${serverPort}?type=tcp&security=none#${encodeURIComponent('🛠 Техподдержка - нажмите на Самолетик 🛩')}`,
+        `vless://00000000-0000-0000-0000-000000000000@${serverIp}:${serverPort}?type=tcp&security=none#${encodeURIComponent('🌐 veil.net - подключение без ограничений 😎')}`
       ];
 
       const finalCopyText = fakeNodes.join('\n') + '\n' + vlessLinks.join('\n');

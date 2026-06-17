@@ -175,6 +175,33 @@ bot.hears('🛡 Мои подписки', async (ctx) => {
       }
     }
 
+    // Получаем сервер из БД для генерации прямого ключа
+    const { data: serverData } = await supabase.from('vpn_servers').select('*').limit(1).single()
+    const server = serverData || {}
+    const s_ip = server.ip_address || '185.142.99.185'
+    const s_port = server.port || 443
+    const s_pbk = server.reality_public_key || 'QScEWDolcox0fyfXNODCepp59KaN5O5WCwLu-QxbL2g'
+    const s_sni = server.reality_sni || 'yahoo.com'
+    const s_sid = server.reality_short_id || 'ca'
+    const s_flow = server.reality_flow || 'xtls-rprx-vision'
+    const s_name = server.name || 'Нидерланды (Premium)'
+    const s_country = server.country_code || 'NL'
+
+    function getFlagEmoji(countryCode) {
+      if (!countryCode) return '🌐';
+      const codePoints = countryCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt(0));
+      try { return String.fromCodePoint(...codePoints); } catch(e) { return '🌐'; }
+    }
+
+    function extractUuid(key) {
+      if (!key) return null;
+      if (key.startsWith('vless://')) {
+        const match = key.match(/vless:\/\/([^@]+)@/);
+        return match ? match[1] : null;
+      }
+      return key;
+    }
+
     let msg = `<b>Ваши ключи доступа:</b>\n\n`
     
     subs.forEach((s, index) => {
@@ -190,7 +217,18 @@ bot.hears('🛡 Мои подписки', async (ctx) => {
       if (s.expires_at) {
         msg += `Истекает: ${new Date(s.expires_at).toLocaleDateString('ru-RU')}\n`
       }
-      msg += `Ключ: <code>${s.subscription_key}</code>\n\n`
+      
+      const uuid = extractUuid(s.subscription_key)
+      let directKey = s.subscription_key
+      if (uuid && (uuid.length === 32 || uuid.length === 36)) {
+        directKey = `vless://${uuid}@${s_ip}:${s_port}?type=tcp&security=reality&pbk=${encodeURIComponent(s_pbk)}&sni=${encodeURIComponent(s_sni)}&fp=chrome&sid=${s_sid}&spx=%2F&flow=${s_flow}#${encodeURIComponent(getFlagEmoji(s_country) + ' ' + s_name)}`
+      }
+
+      msg += `🔑 Прямой ключ (для единичного сервера):\n<code>${directKey}</code>\n\n`
+      
+      if (s.token) {
+        msg += `🔗 Ссылка на подписку (Рекомендуется для Hiddify / v2rayNG):\n<code>https://www.veil-vps.online/api/sub?token=${s.token}</code>\n\n`
+      }
     })
 
     ctx.reply(msg, { parse_mode: 'HTML' })
