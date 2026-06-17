@@ -21,6 +21,7 @@ const SYNC_FILE = path.resolve(__dirname, 'tg-bot/sync.js');
 const SYNC_ENV  = path.resolve(__dirname, '.env');
 const BOT_FILE  = path.resolve(__dirname, 'tg-bot/bot.js');
 const BOT_ENV   = path.resolve(__dirname, 'tg-bot/.env');
+const MONITOR_FILE = path.resolve(__dirname, 'tg-bot/monitor.js');
 
 // Загружаем переменные окружения из локального .env файла
 const envPath = path.resolve(__dirname, '.env');
@@ -123,9 +124,10 @@ async function deploy() {
   await sftpUpload(sftp, SYNC_ENV,   `${SYNC_REMOTE_DIR}/.env`);
   await sftpUpload(sftp, null, `${SYNC_REMOTE_DIR}/package.json`, packageJson);
 
-  console.log('\n📁 Загружаем файлы для veil-bot через SFTP...');
+  console.log('\n📁 Загружаем файлы для veil-bot и monitor через SFTP...');
   await sftpUpload(sftp, BOT_FILE,  `${BOT_REMOTE_DIR}/bot.js`);
   await sftpUpload(sftp, BOT_ENV,   `${BOT_REMOTE_DIR}/.env`);
+  await sftpUpload(sftp, MONITOR_FILE, `${BOT_REMOTE_DIR}/monitor.js`);
 
   sftp.end();
 
@@ -145,6 +147,10 @@ async function deploy() {
   await execCmd(conn, `pm2 delete veil-bot 2>/dev/null || true`);
   await execCmd(conn, `cd ${BOT_REMOTE_DIR} && pm2 start bot.js --name veil-bot --interpreter node`);
 
+  console.log('\n🔄 Перезапускаем veil-monitor в PM2...');
+  await execCmd(conn, `pm2 delete veil-monitor 2>/dev/null || true`);
+  await execCmd(conn, `cd ${BOT_REMOTE_DIR} && pm2 start monitor.js --name veil-monitor --interpreter node`);
+
   await execCmd(conn, `pm2 save`);
 
   // 5. Ждём 5 сек и смотрим логи
@@ -156,6 +162,9 @@ async function deploy() {
 
   console.log('\n📋 Логи veil-bot:');
   await execCmd(conn, `pm2 logs veil-bot --lines 20 --nostream`);
+
+  console.log('\n📋 Логи veil-monitor:');
+  await execCmd(conn, `pm2 logs veil-monitor --lines 20 --nostream`);
 
   conn.end();
   console.log('\n✅ Деплой завершён!');
