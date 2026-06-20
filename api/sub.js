@@ -67,14 +67,13 @@ external-controller: 127.0.0.1:9090
 
 profile:
   store-selected: true
-  store-fake-ip: true
+  store-fake-ip: false
 
 dns:
   enable: true
   listen: 0.0.0.0:53
   ipv6: false
-  enhanced-mode: fake-ip
-  fake-ip-range: 198.18.0.1/16
+  enhanced-mode: redir-host
   nameserver:
     - 8.8.8.8
     - 1.1.1.1
