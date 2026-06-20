@@ -10,6 +10,9 @@
     "start": "concurrently \"vite preview --host\" \"node tg-bot/bot.js\" \"node tg-bot/sync.js\""
   },
   "dependencies": {
+    "@fontsource/orbitron": "^5.2.8",
+    "@fontsource/outfit": "^5.2.8",
+    "@fontsource/plus-jakarta-sans": "^5.2.8",
     "@phosphor-icons/react": "^2.1.10",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
